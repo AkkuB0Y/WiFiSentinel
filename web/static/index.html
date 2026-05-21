@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="WiFi Sentinel — Local network health monitoring dashboard. Track latency, packet loss, and WiFi signal strength in real-time.">
+    <title>WiFi Sentinel — Network Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header id="app-header">
+        <div class="header-left">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                        <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                        <line x1="12" y1="20" x2="12.01" y2="20"/>
+                    </svg>
+                </div>
+                <h1>WiFi Sentinel</h1>
+            </div>
+            <span class="subtitle">Network Health Monitor</span>
+        </div>
+        <div class="header-right">
+            <div id="connection-status" class="connection-badge">
+                <span class="pulse-dot"></span>
+                <span class="status-text">Connecting...</span>
+            </div>
+            <div id="last-updated" class="last-updated">—</div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="dashboard">
+        <!-- Status Cards Row -->
+        <section id="status-cards" class="card-grid">
+            <div class="status-card" id="card-latency">
+                <div class="card-header">
+                    <span class="card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                        </svg>
+                    </span>
+                    <span class="card-label">Latency</span>
+                </div>
+                <div class="card-value" id="val-latency">—</div>
+                <div class="card-unit">ms</div>
+                <div class="card-indicator" id="indicator-latency"></div>
+            </div>
+
+            <div class="status-card" id="card-loss">
+                <div class="card-header">
+                    <span class="card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </span>
+                    <span class="card-label">Packet Loss</span>
+                </div>
+                <div class="card-value" id="val-loss">—</div>
+                <div class="card-unit">%</div>
+                <div class="card-indicator" id="indicator-loss"></div>
+            </div>
+
+            <div class="status-card" id="card-signal">
+                <div class="card-header">
+                    <span class="card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                            <line x1="12" y1="20" x2="12.01" y2="20"/>
+                        </svg>
+                    </span>
+                    <span class="card-label">Signal Strength</span>
+                </div>
+                <div class="card-value" id="val-signal">—</div>
+                <div class="card-unit">dBm</div>
+                <div class="card-indicator" id="indicator-signal"></div>
+            </div>
+
+            <div class="status-card" id="card-network">
+                <div class="card-header">
+                    <span class="card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                            <line x1="6" y1="6" x2="6.01" y2="6"/>
+                            <line x1="6" y1="18" x2="6.01" y2="18"/>
+                        </svg>
+                    </span>
+                    <span class="card-label">Network</span>
+                </div>
+                <div class="card-value card-value-text" id="val-network">—</div>
+                <div class="card-detail" id="val-channel">—</div>
+                <div class="card-indicator" id="indicator-network"></div>
+            </div>
+        </section>
+
+        <!-- Time Range Selector -->
+        <section class="controls">
+            <div class="time-range-selector" id="time-range-selector">
+                <button class="range-btn active" data-range="1h">1H</button>
+                <button class="range-btn" data-range="6h">6H</button>
+                <button class="range-btn" data-range="24h">24H</button>
+                <button class="range-btn" data-range="7d">7D</button>
+            </div>
+        </section>
+
+        <!-- Charts -->
+        <section class="charts-grid">
+            <div class="chart-card" id="chart-card-latency">
+                <div class="chart-header">
+                    <h2>Latency Over Time</h2>
+                    <span class="chart-badge" id="chart-badge-latency">avg: —</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chart-latency"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card" id="chart-card-signal">
+                <div class="chart-header">
+                    <h2>Signal Strength</h2>
+                    <span class="chart-badge" id="chart-badge-signal">avg: —</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chart-signal"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card chart-card-wide" id="chart-card-loss">
+                <div class="chart-header">
+                    <h2>Packet Loss</h2>
+                    <span class="chart-badge" id="chart-badge-loss">avg: —</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chart-loss"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Events Table -->
+        <section class="events-card" id="events-section">
+            <div class="chart-header">
+                <h2>Recent Samples</h2>
+                <span class="event-count" id="event-count">0 samples</span>
+            </div>
+            <div class="table-wrapper">
+                <table id="events-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Target</th>
+                            <th>Latency</th>
+                            <th>Loss</th>
+                            <th>SSID</th>
+                            <th>RSSI</th>
+                            <th>Channel</th>
+                        </tr>
+                    </thead>
+                    <tbody id="events-tbody">
+                        <tr><td colspan="7" class="empty-state">Waiting for data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <span>WiFi Sentinel v1.0</span>
+        <span class="separator">·</span>
+        <span id="footer-targets">—</span>
+        <span class="separator">·</span>
+        <span id="footer-interval">—</span>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
