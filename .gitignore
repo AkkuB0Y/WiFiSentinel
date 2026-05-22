@@ -1,5 +1,6 @@
-# Compiled binary
+# Compiled binaries
 sentinel
+wifi-helper
 
 # SQLite database files
 *.db

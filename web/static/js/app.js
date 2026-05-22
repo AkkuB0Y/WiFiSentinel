@@ -180,9 +180,19 @@ const SentinelApp = (() => {
         const netVal = document.getElementById('val-network');
         const chVal = document.getElementById('val-channel');
         const netInd = document.getElementById('indicator-network');
-        netVal.textContent = data.wifi_ssid || 'Not Connected';
+        // Determine connection status: SSID may be empty due to macOS privacy
+        // redaction even when connected (RSSI non-zero).
+        const ssid = data.wifi_ssid;
+        const isConnected = ssid || rssi !== 0;
+        if (ssid) {
+            netVal.textContent = ssid;
+        } else if (rssi !== 0) {
+            netVal.textContent = 'Connected (Private)';
+        } else {
+            netVal.textContent = 'Not Connected';
+        }
         chVal.textContent = data.wifi_channel > 0 ? `Channel ${data.wifi_channel}` : '—';
-        netInd.className = data.wifi_ssid ? 'card-indicator good' : 'card-indicator';
+        netInd.className = isConnected ? 'card-indicator good' : 'card-indicator';
     }
 
     /**
