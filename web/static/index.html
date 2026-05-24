@@ -106,6 +106,65 @@
             </div>
         </section>
 
+        <!-- Speed Test Bar -->
+        <section id="speedtest-section" class="speedtest-bar">
+            <div class="speedtest-bar-inner">
+                <div class="speedtest-left">
+                    <span class="speedtest-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                        </svg>
+                    </span>
+                    <span class="speedtest-label">Speed Test</span>
+                    <div class="speedtest-results" id="speedtest-results">
+                        <span class="speedtest-metric">
+                            <span class="speedtest-arrow down">↓</span>
+                            <span id="speedtest-download">—</span>
+                            <span class="speedtest-unit">Mbps</span>
+                        </span>
+                        <span class="speedtest-divider">·</span>
+                        <span class="speedtest-metric">
+                            <span class="speedtest-arrow up">↑</span>
+                            <span id="speedtest-upload">—</span>
+                            <span class="speedtest-unit">Mbps</span>
+                        </span>
+                        <span class="speedtest-divider">·</span>
+                        <span class="speedtest-metric">
+                            <span class="speedtest-metric-label">Jitter</span>
+                            <span id="speedtest-jitter">—</span>
+                            <span class="speedtest-unit">ms</span>
+                        </span>
+                        <span class="speedtest-divider hide-mobile">·</span>
+                        <span class="speedtest-ago hide-mobile" id="speedtest-ago">No tests yet</span>
+                    </div>
+                </div>
+                <div class="speedtest-right">
+                    <button class="speedtest-btn" id="speedtest-run-btn" title="Run speed test">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        <span>Run Test</span>
+                    </button>
+                    <button class="speedtest-expand-btn" id="speedtest-expand-btn" title="Show history">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <!-- Progress bar (visible during test) -->
+            <div class="speedtest-progress" id="speedtest-progress">
+                <div class="speedtest-progress-bar" id="speedtest-progress-bar"></div>
+                <span class="speedtest-progress-text" id="speedtest-progress-text">Testing...</span>
+            </div>
+            <!-- Expandable history chart -->
+            <div class="speedtest-history" id="speedtest-history">
+                <div class="chart-container speedtest-chart-container">
+                    <canvas id="chart-speedtest"></canvas>
+                </div>
+            </div>
+        </section>
+
         <!-- Time Range Selector -->
         <section class="controls">
             <div class="time-range-selector" id="time-range-selector">

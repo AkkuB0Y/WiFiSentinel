@@ -20,6 +20,7 @@ const SentinelCharts = (() => {
     let latencyChart = null;
     let signalChart = null;
     let lossChart = null;
+    let speedtestChart = null;
 
     /**
      * Shared axis configuration for all time-series charts.
@@ -293,12 +294,125 @@ const SentinelCharts = (() => {
     }
 
     /**
+     * Create the speed test history chart (download + upload over time).
+     */
+    function createSpeedTestChart(canvasId) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return null;
+
+        const ctx = canvas.getContext('2d');
+
+        const dlGradient = ctx.createLinearGradient(0, 0, 0, 200);
+        dlGradient.addColorStop(0, 'rgba(34, 197, 94, 0.25)');
+        dlGradient.addColorStop(1, 'rgba(34, 197, 94, 0)');
+
+        const ulGradient = ctx.createLinearGradient(0, 0, 0, 200);
+        ulGradient.addColorStop(0, 'rgba(56, 189, 248, 0.2)');
+        ulGradient.addColorStop(1, 'rgba(56, 189, 248, 0)');
+
+        speedtestChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'Download',
+                        data: [],
+                        borderColor: '#22c55e',
+                        backgroundColor: dlGradient,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#22c55e',
+                        pointBorderColor: 'rgba(10, 14, 26, 0.8)',
+                        pointBorderWidth: 2,
+                    },
+                    {
+                        label: 'Upload',
+                        data: [],
+                        borderColor: '#38bdf8',
+                        backgroundColor: ulGradient,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#38bdf8',
+                        pointBorderColor: 'rgba(10, 14, 26, 0.8)',
+                        pointBorderWidth: 2,
+                    },
+                ],
+            },
+            options: {
+                scales: {
+                    x: timeScaleConfig(),
+                    y: {
+                        ...yAxisConfig('Mbps', 0, undefined),
+                        ticks: {
+                            ...yAxisConfig('Mbps', 0, undefined).ticks,
+                            callback: (v) => v + ' Mbps',
+                        },
+                    },
+                },
+                plugins: {
+                    tooltip: {
+                        ...tooltipConfig(),
+                        callbacks: {
+                            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} Mbps`,
+                        },
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            color: '#94a3b8',
+                            font: { size: 11 },
+                            boxWidth: 10,
+                            boxHeight: 10,
+                            padding: 12,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                        },
+                    },
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index',
+                },
+            },
+        });
+
+        return speedtestChart;
+    }
+
+    /**
+     * Update speed test chart with historical data.
+     * @param {Array} samples - Array of SpeedTestSample objects
+     */
+    function updateSpeedTestChart(samples) {
+        if (!speedtestChart || !samples || samples.length === 0) return;
+
+        // Sort by time ascending for chart
+        const sorted = [...samples].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+        const dlData = sorted.map(s => ({ x: new Date(s.timestamp), y: s.download_mbps }));
+        const ulData = sorted.map(s => ({ x: new Date(s.timestamp), y: s.upload_mbps }));
+
+        speedtestChart.data.datasets[0].data = dlData;
+        speedtestChart.data.datasets[1].data = ulData;
+        speedtestChart.update('none');
+    }
+
+    /**
      * Initialize all charts.
      */
     function init() {
         createLatencyChart('chart-latency');
         createSignalChart('chart-signal');
         createPacketLossChart('chart-loss');
+        createSpeedTestChart('chart-speedtest');
     }
 
     /**
@@ -308,11 +422,13 @@ const SentinelCharts = (() => {
         if (latencyChart) { latencyChart.destroy(); latencyChart = null; }
         if (signalChart) { signalChart.destroy(); signalChart = null; }
         if (lossChart) { lossChart.destroy(); lossChart = null; }
+        if (speedtestChart) { speedtestChart.destroy(); speedtestChart = null; }
     }
 
     return {
         init,
         destroy,
         updateCharts,
+        updateSpeedTestChart,
     };
 })();

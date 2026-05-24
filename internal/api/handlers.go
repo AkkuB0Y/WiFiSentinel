@@ -3,25 +3,28 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
 
+	"wifimonitor/internal/collector"
 	"wifimonitor/internal/config"
 	"wifimonitor/internal/db"
 )
 
 // Handlers holds dependencies for API endpoint handlers.
 type Handlers struct {
-	Store  *db.Store
-	Config *config.Config
+	Store       *db.Store
+	Config      *config.Config
+	SpeedTester *collector.SpeedTester
 }
 
 // NewHandlers creates a new Handlers instance.
-func NewHandlers(store *db.Store, cfg *config.Config) *Handlers {
-	return &Handlers{Store: store, Config: cfg}
+func NewHandlers(store *db.Store, cfg *config.Config, st *collector.SpeedTester) *Handlers {
+	return &Handlers{Store: store, Config: cfg, SpeedTester: st}
 }
 
 // HandleGetStatus returns the latest network sample as JSON.
@@ -152,4 +155,102 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 // writeError writes a JSON error response.
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
+}
+
+// --- Speed Test Handlers ---
+
+// HandleRunSpeedTest triggers a manual speed test.
+// POST /api/speedtest/run
+func (h *Handlers) HandleRunSpeedTest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "POST only")
+		return
+	}
+
+	if h.SpeedTester == nil {
+		writeError(w, http.StatusServiceUnavailable, "speed test not available")
+		return
+	}
+
+	if h.SpeedTester.IsRunning() {
+		writeJSON(w, http.StatusConflict, map[string]interface{}{
+			"status":  "running",
+			"message": "A speed test is already in progress",
+		})
+		return
+	}
+
+	// Run the test asynchronously
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+		defer cancel()
+		if _, err := h.SpeedTester.RunTest(ctx); err != nil {
+			log.Printf("[api] speed test error: %v", err)
+		}
+	}()
+
+	writeJSON(w, http.StatusAccepted, map[string]interface{}{
+		"status":  "started",
+		"message": "Speed test started",
+	})
+}
+
+// HandleGetSpeedTestStatus returns whether a test is running and the latest result.
+// GET /api/speedtest/status
+func (h *Handlers) HandleGetSpeedTestStatus(w http.ResponseWriter, r *http.Request) {
+	running := false
+	if h.SpeedTester != nil {
+		running = h.SpeedTester.IsRunning()
+	}
+
+	latest, err := h.Store.GetLatestSpeedTest()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to get speed test status")
+		log.Printf("[api] speedtest status error: %v", err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"running": running,
+		"latest":  latest,
+	})
+}
+
+// HandleGetSpeedTestHistory returns historical speed test results.
+// GET /api/speedtest/history?since=<ISO8601>&limit=<int>
+func (h *Handlers) HandleGetSpeedTestHistory(w http.ResponseWriter, r *http.Request) {
+	since := time.Now().Add(-7 * 24 * time.Hour) // Default: last 7 days
+	limit := 100
+
+	if sinceStr := r.URL.Query().Get("since"); sinceStr != "" {
+		if t, err := time.Parse(time.RFC3339, sinceStr); err == nil {
+			since = t
+		}
+	}
+
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			if l > 500 {
+				l = 500
+			}
+			limit = l
+		}
+	}
+
+	samples, err := h.Store.GetSpeedTestHistory(since, limit)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to get speed test history")
+		log.Printf("[api] speedtest history error: %v", err)
+		return
+	}
+
+	if samples == nil {
+		samples = []db.SpeedTestSample{}
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"samples": samples,
+		"count":   len(samples),
+		"since":   since.Format(time.RFC3339),
+	})
 }

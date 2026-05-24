@@ -17,6 +17,10 @@ type Config struct {
 	// PollInterval is how often the collector gathers network samples.
 	PollInterval time.Duration
 
+	// SpeedTestInterval is how often automatic speed tests run.
+	// Set to 0 to disable automatic speed tests (manual-only).
+	SpeedTestInterval time.Duration
+
 	// DBPath is the filesystem path to the SQLite database file.
 	DBPath string
 
@@ -38,11 +42,12 @@ type Config struct {
 //   - SENTINEL_RETENTION_DAYS: days to retain data (default: 7)
 func LoadConfig() *Config {
 	cfg := &Config{
-		PingTargets:   []string{"8.8.8.8", "1.1.1.1"},
-		PollInterval:  5 * time.Second,
-		DBPath:        "./sentinel.db",
-		HTTPPort:      8080,
-		RetentionDays: 7,
+		PingTargets:       []string{"8.8.8.8", "1.1.1.1"},
+		PollInterval:      5 * time.Second,
+		SpeedTestInterval: 0,
+		DBPath:            "./sentinel.db",
+		HTTPPort:          8080,
+		RetentionDays:     7,
 	}
 
 	if targets := os.Getenv("SENTINEL_PING_TARGETS"); targets != "" {
@@ -77,6 +82,12 @@ func LoadConfig() *Config {
 	if days := os.Getenv("SENTINEL_RETENTION_DAYS"); days != "" {
 		if d, err := strconv.Atoi(days); err == nil && d > 0 {
 			cfg.RetentionDays = d
+		}
+	}
+
+	if stInterval := os.Getenv("SENTINEL_SPEEDTEST_INTERVAL"); stInterval != "" {
+		if d, err := time.ParseDuration(stInterval); err == nil && d >= 0 {
+			cfg.SpeedTestInterval = d
 		}
 	}
 

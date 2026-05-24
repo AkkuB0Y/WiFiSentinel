@@ -29,3 +29,17 @@ type AggregateBucket struct {
 	MaxWifiRSSI    float64   `json:"max_wifi_rssi"`
 	SampleCount    int       `json:"sample_count"`
 }
+
+// SpeedTestSample represents a single speed test measurement.
+// Speed tests run on a separate, less frequent schedule than network samples.
+type SpeedTestSample struct {
+	ID           int64     `json:"id"`
+	Timestamp    time.Time `json:"timestamp"`
+	DownloadMbps float64   `json:"download_mbps"`
+	UploadMbps   float64   `json:"upload_mbps"`
+	JitterMs     float64   `json:"jitter_ms"`
+	LatencyMs    float64   `json:"latency_ms"`
+	ServerName   string    `json:"server_name"`
+	ServerID     string    `json:"server_id"`
+}
+

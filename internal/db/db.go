@@ -59,6 +59,19 @@ func (s *Store) migrate() error {
 
 	CREATE INDEX IF NOT EXISTS idx_samples_timestamp ON network_samples(timestamp);
 	CREATE INDEX IF NOT EXISTS idx_samples_target ON network_samples(target);
+
+	CREATE TABLE IF NOT EXISTS speed_test_samples (
+		id            INTEGER PRIMARY KEY AUTOINCREMENT,
+		timestamp     DATETIME NOT NULL DEFAULT (datetime('now')),
+		download_mbps REAL NOT NULL DEFAULT 0,
+		upload_mbps   REAL NOT NULL DEFAULT 0,
+		jitter_ms     REAL NOT NULL DEFAULT 0,
+		latency_ms    REAL NOT NULL DEFAULT 0,
+		server_name   TEXT NOT NULL DEFAULT '',
+		server_id     TEXT NOT NULL DEFAULT ''
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_speedtest_timestamp ON speed_test_samples(timestamp);
 	`
 	_, err := s.db.Exec(schema)
 	return err
@@ -201,6 +214,90 @@ func (s *Store) Prune(olderThan time.Time) (int64, error) {
 func (s *Store) Close() error {
 	return s.db.Close()
 }
+
+// --- Speed Test Methods ---
+
+// InsertSpeedTest writes a single speed test result to the database.
+func (s *Store) InsertSpeedTest(sample SpeedTestSample) error {
+	query := `
+	INSERT INTO speed_test_samples (timestamp, download_mbps, upload_mbps, jitter_ms, latency_ms, server_name, server_id)
+	VALUES (?, ?, ?, ?, ?, ?, ?)
+	`
+	_, err := s.db.Exec(query,
+		sample.Timestamp.UTC().Format(time.RFC3339),
+		sample.DownloadMbps,
+		sample.UploadMbps,
+		sample.JitterMs,
+		sample.LatencyMs,
+		sample.ServerName,
+		sample.ServerID,
+	)
+	return err
+}
+
+// GetLatestSpeedTest retrieves the most recent speed test result.
+// Returns nil if no speed tests have been run.
+func (s *Store) GetLatestSpeedTest() (*SpeedTestSample, error) {
+	query := `
+	SELECT id, timestamp, download_mbps, upload_mbps, jitter_ms, latency_ms, server_name, server_id
+	FROM speed_test_samples
+	ORDER BY timestamp DESC
+	LIMIT 1
+	`
+	row := s.db.QueryRow(query)
+	var sample SpeedTestSample
+	var ts string
+	err := row.Scan(
+		&sample.ID, &ts,
+		&sample.DownloadMbps, &sample.UploadMbps,
+		&sample.JitterMs, &sample.LatencyMs,
+		&sample.ServerName, &sample.ServerID,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	sample.Timestamp, _ = time.Parse(time.RFC3339, ts)
+	return &sample, nil
+}
+
+// GetSpeedTestHistory retrieves speed test results since the given time.
+func (s *Store) GetSpeedTestHistory(since time.Time, limit int) ([]SpeedTestSample, error) {
+	query := `
+	SELECT id, timestamp, download_mbps, upload_mbps, jitter_ms, latency_ms, server_name, server_id
+	FROM speed_test_samples
+	WHERE timestamp >= ?
+	ORDER BY timestamp DESC
+	LIMIT ?
+	`
+	rows, err := s.db.Query(query, since.UTC().Format(time.RFC3339), limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var samples []SpeedTestSample
+	for rows.Next() {
+		var sample SpeedTestSample
+		var ts string
+		err := rows.Scan(
+			&sample.ID, &ts,
+			&sample.DownloadMbps, &sample.UploadMbps,
+			&sample.JitterMs, &sample.LatencyMs,
+			&sample.ServerName, &sample.ServerID,
+		)
+		if err != nil {
+			return nil, err
+		}
+		sample.Timestamp, _ = time.Parse(time.RFC3339, ts)
+		samples = append(samples, sample)
+	}
+	return samples, rows.Err()
+}
+
+// --- Helpers ---
 
 // scanSample scans a single row into a NetworkSample.
 type scannable interface {
