@@ -44,7 +44,7 @@ func LoadConfig() *Config {
 	cfg := &Config{
 		PingTargets:       []string{"8.8.8.8", "1.1.1.1"},
 		PollInterval:      5 * time.Second,
-		SpeedTestInterval: 30 * time.Minute,
+		SpeedTestInterval: 0,
 		DBPath:            "./sentinel.db",
 		HTTPPort:          8080,
 		RetentionDays:     7,
