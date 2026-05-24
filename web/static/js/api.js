@@ -63,10 +63,40 @@ const SentinelAPI = (() => {
         return request('/api/config');
     }
 
+    /**
+     * Trigger a manual speed test.
+     * @returns {Promise<Object>} { status: 'started' | 'running' }
+     */
+    async function runSpeedTest() {
+        const response = await fetch('/api/speedtest/run', { method: 'POST' });
+        return response.json();
+    }
+
+    /**
+     * Fetch speed test status (running state + latest result).
+     * @returns {Promise<Object>} { running: boolean, latest: SpeedTestSample|null }
+     */
+    async function fetchSpeedTestStatus() {
+        return request('/api/speedtest/status');
+    }
+
+    /**
+     * Fetch historical speed test results.
+     * @param {string} since - ISO 8601 timestamp
+     * @param {number} limit - Max results
+     * @returns {Promise<Object>} { samples: [], count: number }
+     */
+    async function fetchSpeedTestHistory(since, limit = 50) {
+        return request('/api/speedtest/history', { since, limit });
+    }
+
     return {
         fetchStatus,
         fetchHistory,
         fetchAggregates,
         fetchConfig,
+        runSpeedTest,
+        fetchSpeedTestStatus,
+        fetchSpeedTestHistory,
     };
 })();

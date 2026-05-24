@@ -10,6 +10,8 @@ const SentinelApp = (() => {
     let isConnected = false;
     let currentRange = '1h';
     let consecutiveErrors = 0;
+    let speedTestRunning = false;
+    let speedTestPollTimer = null;
 
     // Time range → { since offset, bucket size in minutes }
     const RANGE_CONFIG = {
@@ -28,6 +30,9 @@ const SentinelApp = (() => {
 
         // Set up time range buttons
         setupTimeRangeSelector();
+
+        // Set up speed test controls
+        setupSpeedTest();
 
         // Load config for footer
         loadConfig();
@@ -78,6 +83,9 @@ const SentinelApp = (() => {
 
             // Update events table
             await updateEventsTable();
+
+            // Update speed test status
+            await updateSpeedTestStatus();
 
             // Update last-updated timestamp
             document.getElementById('last-updated').textContent = 
@@ -292,6 +300,164 @@ const SentinelApp = (() => {
         if (rssi >= -50) return 'status-good';
         if (rssi >= -70) return 'status-warn';
         return 'status-bad';
+    }
+
+    // --- Speed Test Functions ---
+
+    /**
+     * Set up speed test button handlers.
+     */
+    function setupSpeedTest() {
+        const runBtn = document.getElementById('speedtest-run-btn');
+        const expandBtn = document.getElementById('speedtest-expand-btn');
+        const historyPanel = document.getElementById('speedtest-history');
+
+        if (runBtn) {
+            runBtn.addEventListener('click', handleRunSpeedTest);
+        }
+
+        if (expandBtn && historyPanel) {
+            expandBtn.addEventListener('click', () => {
+                const expanded = historyPanel.classList.toggle('expanded');
+                expandBtn.classList.toggle('expanded', expanded);
+                if (expanded) {
+                    loadSpeedTestHistory();
+                }
+            });
+        }
+    }
+
+    /**
+     * Handle the Run Test button click.
+     */
+    async function handleRunSpeedTest() {
+        const btn = document.getElementById('speedtest-run-btn');
+        const progress = document.getElementById('speedtest-progress');
+        const progressBar = document.getElementById('speedtest-progress-bar');
+        const progressText = document.getElementById('speedtest-progress-text');
+
+        try {
+            const resp = await SentinelAPI.runSpeedTest();
+
+            if (resp.status === 'started' || resp.status === 'running') {
+                // Show progress state
+                btn.classList.add('running');
+                btn.querySelector('span').textContent = 'Running...';
+                progress.classList.add('active');
+                progressText.textContent = 'Measuring download & upload speeds...';
+                speedTestRunning = true;
+
+                // Reset progress bar animation
+                progressBar.style.animation = 'none';
+                progressBar.offsetHeight; // force reflow
+                progressBar.style.animation = '';
+
+                // Poll more frequently while test is running
+                startSpeedTestPoll();
+            }
+        } catch (err) {
+            console.error('[sentinel] speed test trigger error:', err);
+        }
+    }
+
+    /**
+     * Poll speed test status every 2s while a test is running.
+     */
+    function startSpeedTestPoll() {
+        if (speedTestPollTimer) clearInterval(speedTestPollTimer);
+        speedTestPollTimer = setInterval(async () => {
+            try {
+                const status = await SentinelAPI.fetchSpeedTestStatus();
+                if (!status.running && speedTestRunning) {
+                    // Test just completed
+                    speedTestRunning = false;
+                    clearInterval(speedTestPollTimer);
+                    speedTestPollTimer = null;
+
+                    // Reset UI
+                    const btn = document.getElementById('speedtest-run-btn');
+                    const progress = document.getElementById('speedtest-progress');
+                    btn.classList.remove('running');
+                    btn.querySelector('span').textContent = 'Run Test';
+                    progress.classList.remove('active');
+
+                    // Update with new results
+                    updateSpeedTestDisplay(status.latest);
+                    loadSpeedTestHistory();
+                }
+            } catch (err) {
+                console.error('[sentinel] speed test poll error:', err);
+            }
+        }, 2000);
+    }
+
+    /**
+     * Update speed test status during regular polling.
+     */
+    async function updateSpeedTestStatus() {
+        try {
+            const status = await SentinelAPI.fetchSpeedTestStatus();
+
+            // Update running state
+            if (status.running && !speedTestRunning) {
+                speedTestRunning = true;
+                const btn = document.getElementById('speedtest-run-btn');
+                const progress = document.getElementById('speedtest-progress');
+                btn.classList.add('running');
+                btn.querySelector('span').textContent = 'Running...';
+                progress.classList.add('active');
+                startSpeedTestPoll();
+            }
+
+            // Update display with latest result
+            if (status.latest) {
+                updateSpeedTestDisplay(status.latest);
+            }
+        } catch (err) {
+            // Speed test status is non-critical
+            console.warn('[sentinel] speed test status error:', err);
+        }
+    }
+
+    /**
+     * Update speed test bar with latest result data.
+     */
+    function updateSpeedTestDisplay(data) {
+        if (!data) return;
+
+        document.getElementById('speedtest-download').textContent = data.download_mbps.toFixed(1);
+        document.getElementById('speedtest-upload').textContent = data.upload_mbps.toFixed(1);
+        document.getElementById('speedtest-jitter').textContent = data.jitter_ms.toFixed(1);
+        document.getElementById('speedtest-ago').textContent = timeAgo(new Date(data.timestamp));
+    }
+
+    /**
+     * Load and display speed test history chart.
+     */
+    async function loadSpeedTestHistory() {
+        try {
+            const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+            const data = await SentinelAPI.fetchSpeedTestHistory(since, 50);
+            if (data && data.samples) {
+                SentinelCharts.updateSpeedTestChart(data.samples);
+            }
+        } catch (err) {
+            console.error('[sentinel] speed test history error:', err);
+        }
+    }
+
+    /**
+     * Format a date as a human-readable "time ago" string.
+     */
+    function timeAgo(date) {
+        const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+        if (seconds < 60) return 'just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes} min ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        return `${days}d ago`;
     }
 
     return { init };

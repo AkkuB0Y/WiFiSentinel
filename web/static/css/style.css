@@ -373,6 +373,231 @@ main {
     box-shadow: 0 0 10px rgba(56, 189, 248, 0.1);
 }
 
+/* --- Speed Test Bar --- */
+.speedtest-bar {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: border-color 0.3s ease;
+    animation: fadeIn 0.5s ease forwards;
+    animation-delay: 0.25s;
+    opacity: 0;
+}
+
+.speedtest-bar:hover {
+    border-color: var(--border-glass-hover);
+}
+
+.speedtest-bar-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--gap-md) var(--gap-lg);
+    gap: var(--gap-md);
+}
+
+.speedtest-left {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-md);
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.speedtest-icon {
+    color: var(--chart-orange);
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.speedtest-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+}
+
+.speedtest-results {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-sm);
+    flex-wrap: wrap;
+}
+
+.speedtest-metric {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.speedtest-metric-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    font-family: var(--font-sans);
+}
+
+.speedtest-arrow {
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.speedtest-arrow.down {
+    color: var(--color-good);
+}
+
+.speedtest-arrow.up {
+    color: var(--chart-blue);
+}
+
+.speedtest-unit {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.speedtest-divider {
+    color: var(--text-muted);
+    opacity: 0.3;
+    font-size: 0.9rem;
+}
+
+.speedtest-ago {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-style: italic;
+}
+
+.speedtest-right {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-sm);
+    flex-shrink: 0;
+}
+
+.speedtest-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--chart-orange);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.speedtest-btn:hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.5);
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
+}
+
+.speedtest-btn:active {
+    transform: scale(0.97);
+}
+
+.speedtest-btn.running {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.speedtest-expand-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-glass);
+    background: transparent;
+    color: var(--text-muted);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.speedtest-expand-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.speedtest-expand-btn.expanded svg {
+    transform: rotate(180deg);
+}
+
+.speedtest-expand-btn svg {
+    transition: transform 0.3s ease;
+}
+
+/* Progress bar */
+.speedtest-progress {
+    display: none;
+    position: relative;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.speedtest-progress.active {
+    display: block;
+}
+
+.speedtest-progress-bar {
+    height: 100%;
+    background: var(--gradient-brand);
+    border-radius: 2px;
+    width: 0%;
+    animation: speedtestProgress 25s ease-in-out forwards;
+}
+
+.speedtest-progress-text {
+    position: absolute;
+    top: 6px;
+    left: var(--gap-lg);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+@keyframes speedtestProgress {
+    0% { width: 0%; }
+    15% { width: 15%; }
+    50% { width: 55%; }
+    85% { width: 85%; }
+    100% { width: 95%; }
+}
+
+/* Expandable history */
+.speedtest-history {
+    display: none;
+    padding: 0 var(--gap-lg) var(--gap-lg);
+    border-top: 1px solid var(--border-glass);
+}
+
+.speedtest-history.expanded {
+    display: block;
+}
+
+.speedtest-chart-container {
+    height: 200px;
+    margin-top: var(--gap-md);
+}
+
 /* --- Charts --- */
 .charts-grid {
     display: grid;
@@ -609,6 +834,14 @@ footer {
 
     .chart-container {
         height: 180px;
+    }
+
+    .hide-mobile {
+        display: none;
+    }
+
+    .speedtest-bar-inner {
+        flex-wrap: wrap;
     }
 }
 

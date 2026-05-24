@@ -49,8 +49,8 @@ func main() {
 
 	// Load configuration
 	cfg := config.LoadConfig()
-	log.Printf("config: targets=%v interval=%s port=%d retention=%dd db=%s",
-		cfg.PingTargets, cfg.PollInterval, cfg.HTTPPort, cfg.RetentionDays, cfg.DBPath)
+	log.Printf("config: targets=%v interval=%s port=%d retention=%dd db=%s speedtest=%s",
+		cfg.PingTargets, cfg.PollInterval, cfg.HTTPPort, cfg.RetentionDays, cfg.DBPath, cfg.SpeedTestInterval)
 
 	// Initialize database
 	store, err := db.NewStore(cfg.DBPath)
@@ -66,8 +66,27 @@ func main() {
 		log.Fatalf("failed to load embedded frontend: %v", err)
 	}
 
+	// Create speed tester with DB storage callback
+	speedTester := collector.NewSpeedTester(func(result collector.SpeedTestResult) {
+		if result.Err != nil {
+			return
+		}
+		sample := db.SpeedTestSample{
+			Timestamp:    result.Timestamp,
+			DownloadMbps: result.DownloadMbps,
+			UploadMbps:   result.UploadMbps,
+			JitterMs:     result.JitterMs,
+			LatencyMs:    result.LatencyMs,
+			ServerName:   result.ServerName,
+			ServerID:     result.ServerID,
+		}
+		if err := store.InsertSpeedTest(sample); err != nil {
+			log.Printf("[speedtest] failed to store result: %v", err)
+		}
+	})
+
 	// Create HTTP server
-	server := api.NewServer(cfg, store, staticFS)
+	server := api.NewServer(cfg, store, staticFS, speedTester)
 
 	// Create context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
@@ -76,6 +95,41 @@ func main() {
 	// Start collector in background goroutine
 	coll := collector.NewCollector(cfg, store)
 	go coll.Start(ctx)
+
+	// Start automatic speed test scheduler if interval > 0
+	if cfg.SpeedTestInterval > 0 {
+		go func() {
+			log.Printf("[speedtest] auto-scheduler enabled — running every %s", cfg.SpeedTestInterval)
+			// Run initial speed test after a short delay (let collector start first)
+			initialDelay := time.NewTimer(10 * time.Second)
+			select {
+			case <-ctx.Done():
+				initialDelay.Stop()
+				return
+			case <-initialDelay.C:
+			}
+
+			// Run the first test
+			testCtx, testCancel := context.WithTimeout(ctx, 120*time.Second)
+			speedTester.RunTest(testCtx)
+			testCancel()
+
+			// Schedule subsequent tests
+			ticker := time.NewTicker(cfg.SpeedTestInterval)
+			defer ticker.Stop()
+
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					testCtx, testCancel := context.WithTimeout(ctx, 120*time.Second)
+					speedTester.RunTest(testCtx)
+					testCancel()
+				}
+			}
+		}()
+	}
 
 	// Handle shutdown signals
 	sigChan := make(chan os.Signal, 1)
