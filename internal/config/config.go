@@ -29,6 +29,16 @@ type Config struct {
 
 	// RetentionDays is how many days of data to keep before pruning.
 	RetentionDays int
+
+	// CloudEnabled enables pushing data to Firebase Firestore.
+	// When false (default), the daemon operates in local-only mode.
+	CloudEnabled bool
+
+	// FirebaseProjectID is the Firebase project identifier (e.g. "wifi-sentinel-12345").
+	FirebaseProjectID string
+
+	// FirebaseAPIKey is the Firebase Web API key for authentication.
+	FirebaseAPIKey string
 }
 
 // LoadConfig reads configuration from environment variables, falling back
@@ -89,6 +99,19 @@ func LoadConfig() *Config {
 		if d, err := time.ParseDuration(stInterval); err == nil && d >= 0 {
 			cfg.SpeedTestInterval = d
 		}
+	}
+
+	// Cloud / Firebase settings
+	if cloudEnabled := os.Getenv("SENTINEL_CLOUD_ENABLED"); cloudEnabled != "" {
+		cfg.CloudEnabled = cloudEnabled == "true" || cloudEnabled == "1"
+	}
+
+	if projectID := os.Getenv("SENTINEL_FIREBASE_PROJECT"); projectID != "" {
+		cfg.FirebaseProjectID = projectID
+	}
+
+	if apiKey := os.Getenv("SENTINEL_FIREBASE_API_KEY"); apiKey != "" {
+		cfg.FirebaseAPIKey = apiKey
 	}
 
 	return cfg

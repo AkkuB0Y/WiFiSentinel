@@ -33,3 +33,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Environment credentials
+.env
+start.sh

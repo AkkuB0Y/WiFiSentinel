@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"wifimonitor/internal/cloud"
 	"wifimonitor/internal/collector"
 	"wifimonitor/internal/config"
 	"wifimonitor/internal/db"
@@ -15,11 +16,11 @@ import (
 
 // NewServer creates and configures an HTTP server with all routes and middleware.
 // It serves both the API endpoints and the embedded static frontend.
-func NewServer(cfg *config.Config, store *db.Store, staticFS http.FileSystem, st *collector.SpeedTester) *http.Server {
+func NewServer(cfg *config.Config, store *db.Store, staticFS http.FileSystem, st *collector.SpeedTester, sm *cloud.SessionManager, fc *cloud.FirebaseClient) *http.Server {
 	mux := http.NewServeMux()
 
 	// Register API routes
-	RegisterRoutes(mux, store, cfg, st)
+	RegisterRoutes(mux, store, cfg, st, sm, fc)
 
 	// Serve embedded static frontend
 	if staticFS != nil {
@@ -43,7 +44,7 @@ func NewServer(cfg *config.Config, store *db.Store, staticFS http.FileSystem, st
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 		if r.Method == http.MethodOptions {

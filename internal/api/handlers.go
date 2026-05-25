@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"wifimonitor/internal/cloud"
 	"wifimonitor/internal/collector"
 	"wifimonitor/internal/config"
 	"wifimonitor/internal/db"
@@ -17,14 +18,16 @@ import (
 
 // Handlers holds dependencies for API endpoint handlers.
 type Handlers struct {
-	Store       *db.Store
-	Config      *config.Config
-	SpeedTester *collector.SpeedTester
+	Store          *db.Store
+	Config         *config.Config
+	SpeedTester    *collector.SpeedTester
+	SessionManager *cloud.SessionManager
+	FirebaseClient *cloud.FirebaseClient
 }
 
 // NewHandlers creates a new Handlers instance.
-func NewHandlers(store *db.Store, cfg *config.Config, st *collector.SpeedTester) *Handlers {
-	return &Handlers{Store: store, Config: cfg, SpeedTester: st}
+func NewHandlers(store *db.Store, cfg *config.Config, st *collector.SpeedTester, sm *cloud.SessionManager, fc *cloud.FirebaseClient) *Handlers {
+	return &Handlers{Store: store, Config: cfg, SpeedTester: st, SessionManager: sm, FirebaseClient: fc}
 }
 
 // HandleGetStatus returns the latest network sample as JSON.
@@ -136,10 +139,13 @@ func (h *Handlers) HandleGetAggregates(w http.ResponseWriter, r *http.Request) {
 // GET /api/config
 func (h *Handlers) HandleGetConfig(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"ping_targets":   h.Config.PingTargets,
-		"poll_interval":  h.Config.PollInterval.String(),
-		"retention_days": h.Config.RetentionDays,
-		"http_port":      h.Config.HTTPPort,
+		"ping_targets":    h.Config.PingTargets,
+		"poll_interval":   h.Config.PollInterval.String(),
+		"retention_days":  h.Config.RetentionDays,
+		"http_port":       h.Config.HTTPPort,
+		"cloud_enabled":   h.Config.CloudEnabled,
+		"firebase_project": h.Config.FirebaseProjectID,
+		"firebase_api_key": h.Config.FirebaseAPIKey,
 	})
 }
 
@@ -252,5 +258,189 @@ func (h *Handlers) HandleGetSpeedTestHistory(w http.ResponseWriter, r *http.Requ
 		"samples": samples,
 		"count":   len(samples),
 		"since":   since.Format(time.RFC3339),
+	})
+}
+
+// --- Cloud / Session Handlers ---
+
+// HandleCloudAuth receives a Firebase Auth ID token from the frontend
+// and sets up the Go cloud client with authentication.
+// POST /api/cloud/auth
+func (h *Handlers) HandleCloudAuth(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "POST only")
+		return
+	}
+
+	if h.FirebaseClient == nil {
+		writeError(w, http.StatusServiceUnavailable, "cloud not enabled")
+		return
+	}
+
+	var body struct {
+		IDToken     string `json:"id_token"`
+		UserID      string `json:"user_id"`
+		Email       string `json:"email"`
+		DisplayName string `json:"display_name"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if body.IDToken == "" || body.UserID == "" {
+		writeError(w, http.StatusBadRequest, "id_token and user_id are required")
+		return
+	}
+
+	// Set auth on the Firebase client
+	h.FirebaseClient.SetAuth(body.IDToken, body.UserID)
+
+	// Ensure user document exists in Firestore
+	if err := h.FirebaseClient.EnsureUserDoc(body.Email, body.DisplayName); err != nil {
+		log.Printf("[api] warning: could not ensure user doc: %v", err)
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"status":  "authenticated",
+		"user_id": body.UserID,
+	})
+}
+
+// HandleCloudStatus returns the current cloud connection status.
+// GET /api/cloud/status
+func (h *Handlers) HandleCloudStatus(w http.ResponseWriter, r *http.Request) {
+	enabled := h.Config.CloudEnabled
+	authenticated := false
+	var activeSession interface{}
+
+	if h.FirebaseClient != nil {
+		authenticated = h.FirebaseClient.IsAuthenticated()
+	}
+
+	if h.SessionManager != nil {
+		activeSession = h.SessionManager.GetActiveSession()
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"enabled":        enabled,
+		"authenticated":  authenticated,
+		"active_session": activeSession,
+		"project_id":     h.Config.FirebaseProjectID,
+		"api_key":        h.Config.FirebaseAPIKey,
+	})
+}
+
+// HandleSessionStart starts a new cloud monitoring session.
+// POST /api/session/start
+func (h *Handlers) HandleSessionStart(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "POST only")
+		return
+	}
+
+	if h.SessionManager == nil {
+		writeError(w, http.StatusServiceUnavailable, "cloud not enabled")
+		return
+	}
+
+	var body struct {
+		Name    string `json:"name"`
+		Network string `json:"network"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if body.Name == "" {
+		body.Name = "Untitled Session"
+	}
+
+	session, err := h.SessionManager.StartSession(body.Name, body.Network)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"status":  "started",
+		"session": session,
+	})
+}
+
+// HandleSessionStop stops the active cloud monitoring session.
+// POST /api/session/stop
+func (h *Handlers) HandleSessionStop(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "POST only")
+		return
+	}
+
+	if h.SessionManager == nil {
+		writeError(w, http.StatusServiceUnavailable, "cloud not enabled")
+		return
+	}
+
+	session, err := h.SessionManager.StopSession()
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"status":  "stopped",
+		"session": session,
+	})
+}
+
+// HandleGetActiveSession returns the currently active session.
+// GET /api/session/active
+func (h *Handlers) HandleGetActiveSession(w http.ResponseWriter, r *http.Request) {
+	if h.SessionManager == nil {
+		writeJSON(w, http.StatusOK, map[string]interface{}{
+			"active": false,
+		})
+		return
+	}
+
+	session := h.SessionManager.GetActiveSession()
+	if session == nil {
+		writeJSON(w, http.StatusOK, map[string]interface{}{
+			"active": false,
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"active":  true,
+		"session": session,
+	})
+}
+
+// HandleGetSessions returns the list of recent cloud sessions.
+// GET /api/cloud/sessions
+func (h *Handlers) HandleGetSessions(w http.ResponseWriter, r *http.Request) {
+	if h.FirebaseClient == nil || !h.FirebaseClient.IsAuthenticated() {
+		writeJSON(w, http.StatusOK, map[string]interface{}{
+			"sessions": []interface{}{},
+		})
+		return
+	}
+
+	sessions, err := h.FirebaseClient.GetPreviousSessions(10)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if sessions == nil {
+		sessions = []cloud.SessionInfo{}
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"sessions": sessions,
 	})
 }
