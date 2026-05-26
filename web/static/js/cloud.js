@@ -22,7 +22,12 @@ const SentinelCloud = (() => {
             cloudConfig = await SentinelAPI.getCloudStatus();
 
             if (!cloudConfig.enabled) {
-                hideCloudBar();
+                if (isCloudConsolePage()) {
+                    // On the dedicated cloud page, show a "not enabled" message
+                    showCloudDisabledState();
+                } else {
+                    hideCloudBar();
+                }
                 return;
             }
 
@@ -137,8 +142,11 @@ const SentinelCloud = (() => {
                 clearInterval(tokenRefreshTimer);
                 tokenRefreshTimer = null;
             }
+            SentinelAPI.clearAuthToken();
             if (isCloudConsolePage()) {
                 showUnauthenticatedState();
+            } else {
+                renderHeaderAuth(user);
             }
         }
     }
@@ -372,6 +380,35 @@ const SentinelCloud = (() => {
 
     // --- Dedicated Page Central UI Renderers ---
 
+    function showCloudDisabledState() {
+        updateStatusBadge('unauth');
+        const content = document.getElementById('cloud-content');
+        if (!content) return;
+
+        content.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 60px 20px; text-align: center;">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;">
+                    <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                    <line x1="4" y1="4" x2="20" y2="20" stroke="#ef4444" stroke-width="2"/>
+                </svg>
+                <h2 style="margin: 0; font-size: 1.15rem; font-weight: 600; color: #f1f5f9;">Cloud Mode Not Enabled</h2>
+                <p style="margin: 0; max-width: 420px; font-size: 0.82rem; color: #94a3b8; line-height: 1.6;">
+                    The WiFi Sentinel daemon is running in <strong style="color:#f1f5f9;">local-only mode</strong>. To enable cloud tracking, set the following environment variables and restart:
+                </p>
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #94a3b8; text-align: left; line-height: 1.8; max-width: 440px; width: 100%;">
+                    <span style="color:#64748b;"># In your start.sh or shell:</span><br>
+                    <span style="color:#22c55e;">export</span> SENTINEL_CLOUD_ENABLED=<span style="color:#38bdf8;">true</span><br>
+                    <span style="color:#22c55e;">export</span> SENTINEL_FIREBASE_PROJECT=<span style="color:#38bdf8;">"your-project-id"</span><br>
+                    <span style="color:#22c55e;">export</span> SENTINEL_FIREBASE_API_KEY=<span style="color:#38bdf8;">"your-api-key"</span>
+                </div>
+                <a href="index.html" style="margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid rgba(56, 189, 248, 0.2); background: rgba(56, 189, 248, 0.06); color: #38bdf8; border-radius: 8px; font-size: 0.75rem; font-weight: 600; text-decoration: none; transition: all 0.2s ease;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    Back to Dashboard
+                </a>
+            </div>
+        `;
+    }
+
     function showUnauthenticatedState() {
         updateStatusBadge('unauth');
         const content = document.getElementById('cloud-content');
@@ -438,7 +475,8 @@ const SentinelCloud = (() => {
             : `<div class="cloud-avatar-placeholder">${displayName.charAt(0).toUpperCase()}</div>`;
 
         content.innerHTML = `
-            <div class="cloud-auth-grid">
+            <div class="cloud-auth-layout">
+                <!-- Left: Session Creation + Tracking Info -->
                 <div class="cloud-session-creation-panel">
                     <div class="profile-header-row">
                         <div class="cloud-user-info">
@@ -462,8 +500,62 @@ const SentinelCloud = (() => {
                             </button>
                         </div>
                     </div>
+
+                    <!-- What Gets Tracked -->
+                    <div class="tracking-explainer">
+                        <h3 class="tracking-explainer-title">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            What Gets Tracked
+                        </h3>
+                        <div class="tracking-metrics-grid">
+                            <div class="tracking-metric-card">
+                                <div class="tracking-metric-icon" style="color: #38bdf8;">⚡</div>
+                                <div class="tracking-metric-info">
+                                    <span class="tracking-metric-name">Network Latency</span>
+                                    <span class="tracking-metric-desc">Ping RTT to targets (ms)</span>
+                                </div>
+                            </div>
+                            <div class="tracking-metric-card">
+                                <div class="tracking-metric-icon" style="color: #f59e0b;">💧</div>
+                                <div class="tracking-metric-info">
+                                    <span class="tracking-metric-name">Packet Loss</span>
+                                    <span class="tracking-metric-desc">% failed pings per interval</span>
+                                </div>
+                            </div>
+                            <div class="tracking-metric-card">
+                                <div class="tracking-metric-icon" style="color: #22c55e;">📶</div>
+                                <div class="tracking-metric-info">
+                                    <span class="tracking-metric-name">WiFi Signal (RSSI)</span>
+                                    <span class="tracking-metric-desc">Signal strength in dBm</span>
+                                </div>
+                            </div>
+                            <div class="tracking-metric-card">
+                                <div class="tracking-metric-icon" style="color: #a78bfa;">📡</div>
+                                <div class="tracking-metric-info">
+                                    <span class="tracking-metric-name">WiFi Noise & Channel</span>
+                                    <span class="tracking-metric-desc">Noise floor (dBm) + channel</span>
+                                </div>
+                            </div>
+                            <div class="tracking-metric-card">
+                                <div class="tracking-metric-icon" style="color: #f472b6;">🌐</div>
+                                <div class="tracking-metric-info">
+                                    <span class="tracking-metric-name">Network SSID</span>
+                                    <span class="tracking-metric-desc">Connected network name</span>
+                                </div>
+                            </div>
+                            <div class="tracking-metric-card">
+                                <div class="tracking-metric-icon" style="color: #34d399;">🚀</div>
+                                <div class="tracking-metric-info">
+                                    <span class="tracking-metric-name">Speed Tests</span>
+                                    <span class="tracking-metric-desc">DL/UL Mbps, jitter, latency</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="tracking-explainer-note">Samples collected every <strong>5 seconds</strong> (configurable). Speed tests captured when triggered during an active session.</p>
+                    </div>
                 </div>
 
+                <!-- Right: Previous Sessions -->
                 <div class="cloud-previous-sessions-section">
                     <h3>Recent Cloud Sessions</h3>
                     <div class="cloud-previous-sessions-list" id="cloud-previous-sessions-list">
@@ -497,7 +589,7 @@ const SentinelCloud = (() => {
         const elapsed = session.started_at ? getElapsed(new Date(session.started_at)) : '0:00';
 
         content.innerHTML = `
-            <div class="cloud-auth-grid">
+            <div class="cloud-auth-layout">
                 <div class="cloud-recording-panel">
                     <div class="recording-card-header">
                         <div class="recording-label-badge">
@@ -529,6 +621,35 @@ const SentinelCloud = (() => {
                             </div>
                         </div>
 
+                        <!-- Live Metrics -->
+                        <div class="recording-live-metrics" id="recording-live-metrics">
+                            <h4 class="live-metrics-title">
+                                <span class="live-dot"></span>
+                                Live Capture Preview
+                            </h4>
+                            <div class="live-metrics-grid" id="live-metrics-grid">
+                                <div class="live-metric-card">
+                                    <span class="live-metric-label">Latency</span>
+                                    <span class="live-metric-value" id="live-latency">—</span>
+                                    <span class="live-metric-unit">ms</span>
+                                </div>
+                                <div class="live-metric-card">
+                                    <span class="live-metric-label">Loss</span>
+                                    <span class="live-metric-value" id="live-loss">—</span>
+                                    <span class="live-metric-unit">%</span>
+                                </div>
+                                <div class="live-metric-card">
+                                    <span class="live-metric-label">Signal</span>
+                                    <span class="live-metric-value" id="live-rssi">—</span>
+                                    <span class="live-metric-unit">dBm</span>
+                                </div>
+                                <div class="live-metric-card">
+                                    <span class="live-metric-label">SSID</span>
+                                    <span class="live-metric-value live-metric-text" id="live-ssid">—</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <button class="cloud-stop-btn" id="cloud-stop-btn">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
                             <span>Stop Monitoring & Save</span>
@@ -555,9 +676,49 @@ const SentinelCloud = (() => {
         // Start elapsed timer
         startElapsedTimer(session.started_at);
 
+        // Start live metrics polling
+        startLiveMetricsPolling();
+
         // Load past sessions
         loadPreviousSessionsList();
     }
+
+    // --- Live Metrics Polling During Recording ---
+    let liveMetricsTimer = null;
+
+    function startLiveMetricsPolling() {
+        if (liveMetricsTimer) clearInterval(liveMetricsTimer);
+        updateLiveMetrics(); // immediate first fetch
+        liveMetricsTimer = setInterval(updateLiveMetrics, 5000);
+    }
+
+    function stopLiveMetricsPolling() {
+        if (liveMetricsTimer) {
+            clearInterval(liveMetricsTimer);
+            liveMetricsTimer = null;
+        }
+    }
+
+    async function updateLiveMetrics() {
+        try {
+            const status = await SentinelAPI.fetchStatus();
+            if (!status || status.status === 'waiting') return;
+
+            const latEl = document.getElementById('live-latency');
+            const lossEl = document.getElementById('live-loss');
+            const rssiEl = document.getElementById('live-rssi');
+            const ssidEl = document.getElementById('live-ssid');
+
+            if (latEl) latEl.textContent = status.latency_ms != null ? status.latency_ms.toFixed(1) : '—';
+            if (lossEl) lossEl.textContent = status.packet_loss != null ? status.packet_loss.toFixed(0) : '—';
+            if (rssiEl) rssiEl.textContent = status.wifi_rssi != null ? status.wifi_rssi : '—';
+            if (ssidEl) ssidEl.textContent = status.wifi_ssid || '—';
+        } catch (err) {
+            // Non-critical
+        }
+    }
+
+    // --- Session List Rendering ---
 
     async function loadPreviousSessionsList() {
         const listContainer = document.getElementById('cloud-previous-sessions-list');
@@ -604,15 +765,24 @@ const SentinelCloud = (() => {
 
                 const networkLabel = session.network ? `on <strong>${session.network}</strong>` : 'Local Network';
 
+                // Escape session name for use in onclick attribute
+                const safeName = (session.name || 'Untitled').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const safeTime = startedAt.toLocaleString().replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
                 return `
-                    <div class="cloud-session-item">
+                    <div class="cloud-session-item" onclick="SentinelCloud.openSessionViewer('${session.id}', '${safeName}', '${safeTime}')">
                         <div class="cloud-session-info-left">
                             <span class="session-item-name" title="${session.name}">${session.name}</span>
                             <span class="session-item-date">${dateStr} · ${networkLabel}</span>
                         </div>
                         <div class="cloud-session-info-right">
                             <span class="session-item-duration">${durationStr}</span>
-                            <span class="session-item-badge">Saved</span>
+                            <span class="session-item-badge session-view-badge" title="View Session">
+                                📊 View
+                            </span>
+                            <span class="session-item-badge session-delete-badge" title="Delete Session" onclick="SentinelCloud.handleDeleteSession(event, '${session.id}')">
+                                🗑️ Delete
+                            </span>
                         </div>
                     </div>
                 `;
@@ -652,7 +822,145 @@ const SentinelCloud = (() => {
         return `${mins}:${String(secs).padStart(2, '0')}`;
     }
 
-    return { init, updateSessionState };
+    async function handleDeleteSession(event, sessionId) {
+        event.stopPropagation();
+        if (!confirm("Are you sure you want to delete this session? This action cannot be undone.")) {
+            return;
+        }
+
+        try {
+            await SentinelAPI.deleteSession(sessionId);
+            loadPreviousSessionsList();
+        } catch (err) {
+            console.error('[cloud] error deleting session:', err);
+            alert('Failed to delete session. Please try again.');
+        }
+    }
+
+    // --- Session Viewer Modal ---
+
+    async function openSessionViewer(sessionId, sessionName, sessionTime) {
+        const modal = document.getElementById('session-viewer-modal');
+        const nameEl = document.getElementById('viewer-session-name');
+        const timeEl = document.getElementById('viewer-session-time');
+        const loadingEl = document.getElementById('viewer-loading');
+        const chartsEl = document.getElementById('viewer-charts');
+        const summaryEl = document.getElementById('viewer-summary');
+
+        nameEl.textContent = sessionName;
+        timeEl.textContent = sessionTime;
+        
+        loadingEl.style.display = 'block';
+        chartsEl.style.display = 'none';
+        if (summaryEl) summaryEl.style.display = 'none';
+        modal.style.display = 'flex';
+
+        try {
+            const data = await SentinelAPI.getSessionData(sessionId);
+            
+            if (data && data.buckets && data.buckets.length > 0) {
+                // Show summary stats
+                if (summaryEl && data.summary) {
+                    renderSessionSummary(summaryEl, data.summary);
+                    summaryEl.style.display = 'grid';
+                }
+
+                // Initialize charts if not already done
+                SentinelCharts.init();
+                SentinelCharts.updateCharts(data.buckets);
+
+                // Update speed test chart if data exists
+                if (data.speed_tests && data.speed_tests.length > 0) {
+                    SentinelCharts.updateSpeedTestChart(data.speed_tests);
+                    const stContainer = document.getElementById('viewer-speedtest-section');
+                    if (stContainer) stContainer.style.display = 'block';
+                }
+
+                loadingEl.style.display = 'none';
+                chartsEl.style.display = 'block';
+            } else {
+                loadingEl.innerHTML = `
+                    <div class="viewer-empty-state">
+                        <span style="font-size: 2rem;">📭</span>
+                        <h3>No Data Recorded</h3>
+                        <p>This session has no network samples. The session may have been too short to capture data, or the data may have failed to sync to Firestore.</p>
+                    </div>
+                `;
+            }
+        } catch (err) {
+            console.error('[cloud] error loading session data:', err);
+            loadingEl.innerHTML = `
+                <div class="viewer-empty-state error">
+                    <span style="font-size: 2rem;">⚠️</span>
+                    <h3>Failed to Load Data</h3>
+                    <p>${err.message || 'An error occurred while fetching session data from Firestore. Check your authentication and try again.'}</p>
+                </div>
+            `;
+        }
+    }
+
+    function renderSessionSummary(container, summary) {
+        const avgLat = summary.avg_latency_ms != null ? summary.avg_latency_ms.toFixed(1) : '—';
+        const maxLat = summary.max_latency_ms != null ? summary.max_latency_ms.toFixed(1) : '—';
+        const avgSig = summary.avg_wifi_rssi != null ? Math.round(summary.avg_wifi_rssi) : '—';
+        const avgLoss = summary.avg_packet_loss != null ? summary.avg_packet_loss.toFixed(1) : '—';
+        const samples = summary.sample_count || 0;
+        const speedTests = summary.speed_test_count || 0;
+
+        container.innerHTML = `
+            <div class="summary-stat-card">
+                <span class="summary-stat-icon" style="color: #38bdf8;">⚡</span>
+                <div class="summary-stat-data">
+                    <span class="summary-stat-value">${avgLat}<span class="summary-stat-unit">ms</span></span>
+                    <span class="summary-stat-label">Avg Latency</span>
+                </div>
+            </div>
+            <div class="summary-stat-card">
+                <span class="summary-stat-icon" style="color: #ef4444;">📈</span>
+                <div class="summary-stat-data">
+                    <span class="summary-stat-value">${maxLat}<span class="summary-stat-unit">ms</span></span>
+                    <span class="summary-stat-label">Max Latency</span>
+                </div>
+            </div>
+            <div class="summary-stat-card">
+                <span class="summary-stat-icon" style="color: #22c55e;">📶</span>
+                <div class="summary-stat-data">
+                    <span class="summary-stat-value">${avgSig}<span class="summary-stat-unit">dBm</span></span>
+                    <span class="summary-stat-label">Avg Signal</span>
+                </div>
+            </div>
+            <div class="summary-stat-card">
+                <span class="summary-stat-icon" style="color: #f59e0b;">💧</span>
+                <div class="summary-stat-data">
+                    <span class="summary-stat-value">${avgLoss}<span class="summary-stat-unit">%</span></span>
+                    <span class="summary-stat-label">Avg Loss</span>
+                </div>
+            </div>
+            <div class="summary-stat-card">
+                <span class="summary-stat-icon" style="color: #a78bfa;">📊</span>
+                <div class="summary-stat-data">
+                    <span class="summary-stat-value">${samples}</span>
+                    <span class="summary-stat-label">Samples</span>
+                </div>
+            </div>
+            <div class="summary-stat-card">
+                <span class="summary-stat-icon" style="color: #34d399;">🚀</span>
+                <div class="summary-stat-data">
+                    <span class="summary-stat-value">${speedTests}</span>
+                    <span class="summary-stat-label">Speed Tests</span>
+                </div>
+            </div>
+        `;
+    }
+
+    function closeSessionViewer() {
+        const modal = document.getElementById('session-viewer-modal');
+        modal.style.display = 'none';
+        stopLiveMetricsPolling();
+        SentinelCharts.destroy();
+    }
+
+    return { init, updateSessionState, handleDeleteSession, openSessionViewer, closeSessionViewer };
 })();
 
 // Automatically initialize module on page load

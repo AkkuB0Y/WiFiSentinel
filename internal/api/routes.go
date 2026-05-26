@@ -31,6 +31,8 @@ func RegisterRoutes(mux *http.ServeMux, store *db.Store, cfg *config.Config, st 
 	mux.HandleFunc("/api/cloud/sessions", h.HandleGetSessions)
 	mux.HandleFunc("/api/session/start", h.HandleSessionStart)
 	mux.HandleFunc("/api/session/stop", h.HandleSessionStop)
+	mux.HandleFunc("/api/session/delete", h.HandleSessionDelete)
+	mux.HandleFunc("/api/session/data", h.HandleGetSessionData)
 	mux.HandleFunc("/api/session/active", h.HandleGetActiveSession)
 }
 

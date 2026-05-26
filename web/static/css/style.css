@@ -1004,7 +1004,8 @@ footer {
 
 /* Grid Layouts */
 .cloud-unauth-grid,
-.cloud-auth-grid {
+.cloud-auth-grid,
+.cloud-auth-layout {
     display: grid;
     grid-template-columns: 1.2fr 1fr;
     gap: var(--gap-xl);
@@ -1013,7 +1014,8 @@ footer {
 @media (max-width: 900px) {
 
     .cloud-unauth-grid,
-    .cloud-auth-grid {
+    .cloud-auth-grid,
+    .cloud-auth-layout {
         grid-template-columns: 1fr;
         gap: var(--gap-lg);
     }
@@ -1921,7 +1923,301 @@ footer {
 
 /* Dedicated Cloud Page Adjustments */
 .cloud-console-main {
-    max-width: 1000px;
+    max-width: 1060px;
     margin: 0 auto;
     padding: var(--gap-xl);
+}
+
+/* --- What Gets Tracked Explainer --- */
+.tracking-explainer {
+    margin-top: var(--gap-lg);
+    padding: var(--gap-lg);
+    background: rgba(167, 139, 250, 0.03);
+    border: 1px solid rgba(167, 139, 250, 0.1);
+    border-radius: var(--radius-md);
+}
+
+.tracking-explainer-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--gap-md);
+}
+
+.tracking-explainer-title svg {
+    color: var(--chart-purple);
+    opacity: 0.7;
+}
+
+.tracking-metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.tracking-metric-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.tracking-metric-card:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+    transform: translateX(2px);
+}
+
+.tracking-metric-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+    width: 28px;
+    text-align: center;
+}
+
+.tracking-metric-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.tracking-metric-name {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.tracking-metric-desc {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+.tracking-explainer-note {
+    margin-top: var(--gap-md);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    padding-top: var(--gap-sm);
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.tracking-explainer-note strong {
+    color: var(--text-secondary);
+}
+
+/* --- Live Metrics During Recording --- */
+.recording-live-metrics {
+    margin-top: var(--gap-lg);
+    padding: var(--gap-md);
+    background: rgba(239, 68, 68, 0.03);
+    border: 1px solid rgba(239, 68, 68, 0.08);
+    border-radius: var(--radius-md);
+}
+
+.live-metrics-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--color-bad);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: var(--gap-md);
+}
+
+.live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-bad);
+    animation: recordPulse 1.5s infinite;
+}
+
+.live-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.live-metric-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 10px 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+}
+
+.live-metric-label {
+    font-size: 0.58rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.live-metric-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    transition: color 0.3s ease;
+}
+
+.live-metric-value.live-metric-text {
+    font-size: 0.72rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+.live-metric-unit {
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+/* --- Session Viewer Summary Stats --- */
+.viewer-summary-grid {
+    display: grid;
+}
+
+.summary-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.summary-stat-card:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.summary-stat-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.summary-stat-data {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.summary-stat-value {
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.summary-stat-unit {
+    font-size: 0.55rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 2px;
+}
+
+.summary-stat-label {
+    font-size: 0.58rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+@media (max-width: 700px) {
+    .viewer-summary-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+    .live-metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .tracking-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- Improved Session Item Badges --- */
+.session-view-badge {
+    background: rgba(56, 189, 248, 0.08) !important;
+    border-color: rgba(56, 189, 248, 0.2) !important;
+    color: var(--chart-blue) !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.session-view-badge:hover {
+    background: rgba(56, 189, 248, 0.15) !important;
+    border-color: rgba(56, 189, 248, 0.4) !important;
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.1);
+}
+
+.session-delete-badge {
+    background: rgba(239, 68, 68, 0.06) !important;
+    border-color: rgba(239, 68, 68, 0.15) !important;
+    color: var(--color-bad) !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.session-delete-badge:hover {
+    background: rgba(239, 68, 68, 0.12) !important;
+    border-color: rgba(239, 68, 68, 0.35) !important;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.1);
+}
+
+.cloud-session-item {
+    cursor: pointer;
+}
+
+/* --- Session Viewer Empty/Error States --- */
+.viewer-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--gap-sm);
+    padding: var(--gap-xl) var(--gap-lg);
+    text-align: center;
+}
+
+.viewer-empty-state h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.viewer-empty-state p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    max-width: 380px;
+    line-height: 1.5;
+}
+
+.viewer-empty-state.error h3 {
+    color: var(--color-bad);
 }

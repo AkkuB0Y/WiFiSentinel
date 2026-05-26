@@ -444,3 +444,136 @@ func (h *Handlers) HandleGetSessions(w http.ResponseWriter, r *http.Request) {
 		"sessions": sessions,
 	})
 }
+
+// HandleSessionDelete deletes a cloud session.
+// POST /api/session/delete
+func (h *Handlers) HandleSessionDelete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "POST only")
+		return
+	}
+
+	if h.FirebaseClient == nil || !h.FirebaseClient.IsAuthenticated() {
+		writeError(w, http.StatusUnauthorized, "unauthenticated")
+		return
+	}
+
+	var body struct {
+		SessionID string `json:"session_id"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if body.SessionID == "" {
+		writeError(w, http.StatusBadRequest, "session_id is required")
+		return
+	}
+
+	if err := h.FirebaseClient.DeleteSession(body.SessionID); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"status": "deleted",
+	})
+}
+
+// HandleGetSessionData fetches historical graph data for a specific session.
+// GET /api/session/data?id={session_id}
+func (h *Handlers) HandleGetSessionData(w http.ResponseWriter, r *http.Request) {
+	if h.FirebaseClient == nil || !h.FirebaseClient.IsAuthenticated() {
+		writeError(w, http.StatusUnauthorized, "unauthenticated")
+		return
+	}
+
+	sessionID := r.URL.Query().Get("id")
+	if sessionID == "" {
+		writeError(w, http.StatusBadRequest, "missing session id")
+		return
+	}
+
+	samples, err := h.FirebaseClient.GetSessionData(sessionID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Fetch speed tests for this session
+	speedTests, err := h.FirebaseClient.GetSessionSpeedTests(sessionID)
+	if err != nil {
+		log.Printf("[api] warning: could not fetch speed tests for session %s: %v", sessionID, err)
+		speedTests = []cloud.SpeedTestData{}
+	}
+
+	// Build network sample buckets (1-to-1 mapping from raw samples)
+	type bucket struct {
+		BucketStart   time.Time `json:"bucket_start"`
+		AvgLatency    float64   `json:"avg_latency_ms"`
+		MaxLatency    float64   `json:"max_latency_ms"`
+		AvgWifiRSSI   float64   `json:"avg_wifi_rssi"`
+		AvgPacketLoss float64   `json:"avg_packet_loss"`
+	}
+
+	var buckets []bucket
+	var totalLatency, maxLatency, totalRSSI, totalLoss float64
+	for _, s := range samples {
+		buckets = append(buckets, bucket{
+			BucketStart:   s.Timestamp,
+			AvgLatency:    s.LatencyMs,
+			MaxLatency:    s.LatencyMs,
+			AvgWifiRSSI:   float64(s.WifiRSSI),
+			AvgPacketLoss: s.PacketLoss,
+		})
+		totalLatency += s.LatencyMs
+		if s.LatencyMs > maxLatency {
+			maxLatency = s.LatencyMs
+		}
+		totalRSSI += float64(s.WifiRSSI)
+		totalLoss += s.PacketLoss
+	}
+
+	// Build speed test entries
+	type speedEntry struct {
+		Timestamp    time.Time `json:"timestamp"`
+		DownloadMbps float64   `json:"download_mbps"`
+		UploadMbps   float64   `json:"upload_mbps"`
+		JitterMs     float64   `json:"jitter_ms"`
+		LatencyMs    float64   `json:"latency_ms"`
+		ServerName   string    `json:"server_name"`
+	}
+	var speedEntries []speedEntry
+	for _, t := range speedTests {
+		speedEntries = append(speedEntries, speedEntry{
+			Timestamp:    t.Timestamp,
+			DownloadMbps: t.DownloadMbps,
+			UploadMbps:   t.UploadMbps,
+			JitterMs:     t.JitterMs,
+			LatencyMs:    t.LatencyMs,
+			ServerName:   t.ServerName,
+		})
+	}
+
+	// Compute summary stats
+	sampleCount := len(samples)
+	summary := map[string]interface{}{
+		"sample_count":     sampleCount,
+		"speed_test_count": len(speedTests),
+	}
+	if sampleCount > 0 {
+		summary["avg_latency_ms"] = totalLatency / float64(sampleCount)
+		summary["max_latency_ms"] = maxLatency
+		summary["avg_wifi_rssi"] = totalRSSI / float64(sampleCount)
+		summary["avg_packet_loss"] = totalLoss / float64(sampleCount)
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"buckets":     buckets,
+		"speed_tests": speedEntries,
+		"summary":     summary,
+	})
+}
+

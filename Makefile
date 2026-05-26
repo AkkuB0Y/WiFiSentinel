@@ -4,7 +4,7 @@
 #   make          Build both wifi-helper and sentinel
 #   make clean    Remove compiled binaries
 
-.PHONY: all clean
+.PHONY: all clean sentinel
 
 all: wifi-helper sentinel
 

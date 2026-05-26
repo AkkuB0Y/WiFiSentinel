@@ -172,6 +172,17 @@ func (fc *FirebaseClient) patchDocument(docPath string, doc firestoreDoc) error 
 	fc.mu.RUnlock()
 
 	url := fc.firestoreURL(docPath)
+	
+	// Append updateMask for partial updates
+	isFirst := true
+	for k := range doc.Fields {
+		if isFirst {
+			url += "?updateMask.fieldPaths=" + k
+			isFirst = false
+		} else {
+			url += "&updateMask.fieldPaths=" + k
+		}
+	}
 
 	body, err := json.Marshal(doc)
 	if err != nil {
@@ -282,6 +293,39 @@ func (fc *FirebaseClient) EndSession(sessionID string) error {
 	return nil
 }
 
+// DeleteSession removes a session document from Firestore.
+func (fc *FirebaseClient) DeleteSession(sessionID string) error {
+	if !fc.IsAuthenticated() {
+		return fmt.Errorf("unauthenticated")
+	}
+	userID := fc.GetUserID()
+	url := fc.firestoreURL(fmt.Sprintf("users/%s/sessions/%s", userID, sessionID))
+
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return fmt.Errorf("request error: %w", err)
+	}
+
+	fc.mu.RLock()
+	token := fc.idToken
+	fc.mu.RUnlock()
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := fc.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("firestore request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("firestore delete error %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	log.Printf("[cloud] deleted session %s", sessionID)
+	return nil
+}
+
 // PushSamples writes a batch of network samples to Firestore.
 // Each sample becomes a document in the session's network_samples subcollection.
 func (fc *FirebaseClient) PushSamples(sessionID string, samples []NetworkSampleData) error {
@@ -355,7 +399,7 @@ func (fc *FirebaseClient) GetPreviousSessions(limit int) ([]SessionInfo, error) 
 	fc.mu.RUnlock()
 
 	url := fmt.Sprintf(
-		"https://firestore.googleapis.com/v1/projects/%s/databases/(default)/documents/users/%s/sessions?pageSize=%d",
+		"https://firestore.googleapis.com/v1/projects/%s/databases/(default)/documents/users/%s/sessions?pageSize=%d&orderBy=started_at%%20desc",
 		fc.projectID, userID, limit,
 	)
 
@@ -379,6 +423,9 @@ func (fc *FirebaseClient) GetPreviousSessions(limit int) ([]SessionInfo, error) 
 		return nil, fmt.Errorf("firestore error %d: %s", resp.StatusCode, string(respBody))
 	}
 
+	respBody, _ := io.ReadAll(resp.Body)
+	log.Printf("[cloud] raw firestore sessions response: %s", string(respBody))
+
 	var result struct {
 		Documents []struct {
 			Name   string `json:"name"`
@@ -389,7 +436,7 @@ func (fc *FirebaseClient) GetPreviousSessions(limit int) ([]SessionInfo, error) 
 		} `json:"documents"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.Unmarshal(respBody, &result); err != nil {
 		return nil, err
 	}
 
@@ -435,4 +482,172 @@ func (fc *FirebaseClient) GetPreviousSessions(limit int) ([]SessionInfo, error) 
 	}
 
 	return sessions, nil
+}
+
+// GetSessionData fetches the network samples for a specific session.
+func (fc *FirebaseClient) GetSessionData(sessionID string) ([]NetworkSampleData, error) {
+	if !fc.IsAuthenticated() {
+		return nil, fmt.Errorf("unauthenticated")
+	}
+
+	fc.mu.RLock()
+	token := fc.idToken
+	userID := fc.userID
+	fc.mu.RUnlock()
+
+	// Fetch up to 2000 samples for the session, ordered by timestamp
+	url := fmt.Sprintf(
+		"https://firestore.googleapis.com/v1/projects/%s/databases/(default)/documents/users/%s/sessions/%s/network_samples?pageSize=2000&orderBy=timestamp",
+		fc.projectID, userID, sessionID,
+	)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := fc.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		if resp.StatusCode == http.StatusNotFound {
+			return []NetworkSampleData{}, nil
+		}
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("firestore error %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	var result struct {
+		Documents []struct {
+			Fields map[string]struct {
+				StringVal    *string  `json:"stringValue,omitempty"`
+				DoubleVal    *float64 `json:"doubleValue,omitempty"`
+				IntVal       *string  `json:"integerValue,omitempty"`
+				TimestampVal *string  `json:"timestampValue,omitempty"`
+			} `json:"fields"`
+		} `json:"documents"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	var samples []NetworkSampleData
+	for _, doc := range result.Documents {
+		var s NetworkSampleData
+
+		if f, ok := doc.Fields["timestamp"]; ok && f.TimestampVal != nil {
+			s.Timestamp, _ = time.Parse(time.RFC3339Nano, *f.TimestampVal)
+		}
+		if f, ok := doc.Fields["target"]; ok && f.StringVal != nil {
+			s.Target = *f.StringVal
+		}
+		if f, ok := doc.Fields["latency_ms"]; ok && f.DoubleVal != nil {
+			s.LatencyMs = *f.DoubleVal
+		}
+		if f, ok := doc.Fields["packet_loss"]; ok && f.DoubleVal != nil {
+			s.PacketLoss = *f.DoubleVal
+		}
+		if f, ok := doc.Fields["wifi_ssid"]; ok && f.StringVal != nil {
+			s.WifiSSID = *f.StringVal
+		}
+
+		// Firestore integerValue is actually represented as a string in JSON
+		if f, ok := doc.Fields["wifi_rssi"]; ok && f.IntVal != nil {
+			fmt.Sscanf(*f.IntVal, "%d", &s.WifiRSSI)
+		}
+		if f, ok := doc.Fields["wifi_noise"]; ok && f.IntVal != nil {
+			fmt.Sscanf(*f.IntVal, "%d", &s.WifiNoise)
+		}
+		if f, ok := doc.Fields["wifi_channel"]; ok && f.IntVal != nil {
+			fmt.Sscanf(*f.IntVal, "%d", &s.WifiChannel)
+		}
+
+		samples = append(samples, s)
+	}
+
+	return samples, nil
+}
+
+// GetSessionSpeedTests fetches speed test results for a specific session.
+func (fc *FirebaseClient) GetSessionSpeedTests(sessionID string) ([]SpeedTestData, error) {
+	if !fc.IsAuthenticated() {
+		return nil, fmt.Errorf("unauthenticated")
+	}
+
+	fc.mu.RLock()
+	token := fc.idToken
+	userID := fc.userID
+	fc.mu.RUnlock()
+
+	url := fmt.Sprintf(
+		"https://firestore.googleapis.com/v1/projects/%s/databases/(default)/documents/users/%s/sessions/%s/speed_tests?pageSize=500&orderBy=timestamp",
+		fc.projectID, userID, sessionID,
+	)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := fc.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		if resp.StatusCode == http.StatusNotFound {
+			return []SpeedTestData{}, nil
+		}
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("firestore error %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	var result struct {
+		Documents []struct {
+			Fields map[string]struct {
+				StringVal    *string  `json:"stringValue,omitempty"`
+				DoubleVal    *float64 `json:"doubleValue,omitempty"`
+				TimestampVal *string  `json:"timestampValue,omitempty"`
+			} `json:"fields"`
+		} `json:"documents"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	var tests []SpeedTestData
+	for _, doc := range result.Documents {
+		var t SpeedTestData
+
+		if f, ok := doc.Fields["timestamp"]; ok && f.TimestampVal != nil {
+			t.Timestamp, _ = time.Parse(time.RFC3339Nano, *f.TimestampVal)
+		}
+		if f, ok := doc.Fields["download_mbps"]; ok && f.DoubleVal != nil {
+			t.DownloadMbps = *f.DoubleVal
+		}
+		if f, ok := doc.Fields["upload_mbps"]; ok && f.DoubleVal != nil {
+			t.UploadMbps = *f.DoubleVal
+		}
+		if f, ok := doc.Fields["jitter_ms"]; ok && f.DoubleVal != nil {
+			t.JitterMs = *f.DoubleVal
+		}
+		if f, ok := doc.Fields["latency_ms"]; ok && f.DoubleVal != nil {
+			t.LatencyMs = *f.DoubleVal
+		}
+		if f, ok := doc.Fields["server_name"]; ok && f.StringVal != nil {
+			t.ServerName = *f.StringVal
+		}
+
+		tests = append(tests, t)
+	}
+
+	return tests, nil
 }

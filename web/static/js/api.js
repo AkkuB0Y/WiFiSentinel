@@ -142,6 +142,24 @@ const SentinelAPI = (() => {
     }
 
     /**
+     * Delete a cloud monitoring session.
+     * @param {string} sessionId
+     * @returns {Promise<Object>} { status: 'deleted' }
+     */
+    async function deleteSession(sessionId) {
+        return postRequest('/api/session/delete', { session_id: sessionId });
+    }
+
+    /**
+     * Get historical graph data for a session.
+     * @param {string} sessionId
+     * @returns {Promise<Object>} { buckets: [] }
+     */
+    async function getSessionData(sessionId) {
+        return request(`/api/session/data`, { id: sessionId });
+    }
+
+    /**
      * Get the currently active session.
      * @returns {Promise<Object>} { active: boolean, session?: Session }
      */
@@ -169,6 +187,8 @@ const SentinelAPI = (() => {
         getCloudStatus,
         startSession,
         stopSession,
+        deleteSession,
+        getSessionData,
         getActiveSession,
         getCloudSessions,
     };
