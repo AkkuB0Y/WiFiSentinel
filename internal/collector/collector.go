@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"wifimonitor/internal/cloud"
 	"wifimonitor/internal/config"
 	"wifimonitor/internal/db"
 )
@@ -15,16 +16,21 @@ import (
 // Collector orchestrates periodic network health data collection.
 // It pings configured targets, gathers WiFi info, and stores results in the database.
 type Collector struct {
-	cfg   *config.Config
-	store *db.Store
-	ticks uint64 // counts ticks for periodic maintenance
+	cfg        *config.Config
+	store      *db.Store
+	ticks      uint64 // counts ticks for periodic maintenance
+	cloudBuf   *cloud.SampleBuffer
+	sessionMgr *cloud.SessionManager
 }
 
 // NewCollector creates a new Collector with the given configuration and database store.
-func NewCollector(cfg *config.Config, store *db.Store) *Collector {
+// cloudBuf and sessionMgr may be nil when cloud mode is disabled.
+func NewCollector(cfg *config.Config, store *db.Store, cloudBuf *cloud.SampleBuffer, sessionMgr *cloud.SessionManager) *Collector {
 	return &Collector{
-		cfg:   cfg,
-		store: store,
+		cfg:        cfg,
+		store:      store,
+		cloudBuf:   cloudBuf,
+		sessionMgr: sessionMgr,
 	}
 }
 
@@ -87,6 +93,20 @@ func (c *Collector) collect(ctx context.Context) {
 			log.Printf("[collector] failed to insert sample for %s: %v", pr.Target, err)
 		}
 
+		// Push to cloud buffer if session is active
+		if c.cloudBuf != nil && c.sessionMgr != nil && c.sessionMgr.HasActiveSession() {
+			c.cloudBuf.Add(cloud.NetworkSampleData{
+				Timestamp:   now,
+				Target:      pr.Target,
+				LatencyMs:   pr.LatencyMs,
+				PacketLoss:  pr.PacketLoss,
+				WifiSSID:    wifi.SSID,
+				WifiRSSI:    wifi.RSSI,
+				WifiNoise:   wifi.Noise,
+				WifiChannel: wifi.Channel,
+			})
+		}
+
 		if pr.Err != nil {
 			log.Printf("[collector] ping %s error: %v", pr.Target, pr.Err)
 		}
@@ -127,3 +147,4 @@ func (c *Collector) pingAll(ctx context.Context) []PingResult {
 	wg.Wait()
 	return results
 }
+

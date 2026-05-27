@@ -42,7 +42,7 @@
 
     /* Gradients */
     --gradient-brand: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #a78bfa 100%);
-    --gradient-card: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 100%);
+    --gradient-card: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 100%);
 
     /* Spacing */
     --gap-xs: 0.25rem;
@@ -68,7 +68,9 @@
 }
 
 /* --- Reset & Base --- */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -203,9 +205,17 @@ header {
 }
 
 @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
-    70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    0% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    }
 }
 
 .last-updated {
@@ -330,9 +340,18 @@ main {
     transition: background 0.3s ease;
 }
 
-.card-indicator.good { background: var(--color-good); box-shadow: var(--shadow-glow-green); }
-.card-indicator.warn { background: var(--color-warn); }
-.card-indicator.bad { background: var(--color-bad); }
+.card-indicator.good {
+    background: var(--color-good);
+    box-shadow: var(--shadow-glow-green);
+}
+
+.card-indicator.warn {
+    background: var(--color-warn);
+}
+
+.card-indicator.bad {
+    background: var(--color-bad);
+}
 
 /* --- Controls --- */
 .controls {
@@ -575,11 +594,25 @@ main {
 }
 
 @keyframes speedtestProgress {
-    0% { width: 0%; }
-    15% { width: 15%; }
-    50% { width: 55%; }
-    85% { width: 85%; }
-    100% { width: 95%; }
+    0% {
+        width: 0%;
+    }
+
+    15% {
+        width: 15%;
+    }
+
+    50% {
+        width: 55%;
+    }
+
+    85% {
+        width: 85%;
+    }
+
+    100% {
+        width: 95%;
+    }
 }
 
 /* Expandable history */
@@ -719,9 +752,17 @@ tbody tr:hover td {
 }
 
 /* Status color classes for table cells */
-td.status-good { color: var(--color-good); }
-td.status-warn { color: var(--color-warn); }
-td.status-bad { color: var(--color-bad); }
+td.status-good {
+    color: var(--color-good);
+}
+
+td.status-warn {
+    color: var(--color-warn);
+}
+
+td.status-bad {
+    color: var(--color-bad);
+}
 
 /* --- Footer --- */
 footer {
@@ -743,23 +784,46 @@ footer {
 
 /* --- Animations --- */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
 }
 
 .status-card {
     animation: fadeIn 0.5s ease forwards;
 }
 
-.status-card:nth-child(1) { animation-delay: 0s; }
-.status-card:nth-child(2) { animation-delay: 0.08s; }
-.status-card:nth-child(3) { animation-delay: 0.16s; }
-.status-card:nth-child(4) { animation-delay: 0.24s; }
+.status-card:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.status-card:nth-child(2) {
+    animation-delay: 0.08s;
+}
+
+.status-card:nth-child(3) {
+    animation-delay: 0.16s;
+}
+
+.status-card:nth-child(4) {
+    animation-delay: 0.24s;
+}
 
 .chart-card {
     animation: fadeIn 0.5s ease forwards;
@@ -767,8 +831,13 @@ footer {
     opacity: 0;
 }
 
-.chart-card:nth-child(2) { animation-delay: 0.4s; }
-.chart-card:nth-child(3) { animation-delay: 0.5s; }
+.chart-card:nth-child(2) {
+    animation-delay: 0.4s;
+}
+
+.chart-card:nth-child(3) {
+    animation-delay: 0.5s;
+}
 
 .events-card {
     animation: fadeIn 0.5s ease forwards;
@@ -782,11 +851,765 @@ footer {
 }
 
 @keyframes valueFlash {
-    0% { opacity: 0.5; }
-    100% { opacity: 1; }
+    0% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
 /* --- Responsive --- */
+
+/* --- Cloud Control Center Card --- */
+.cloud-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-card);
+    animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    position: relative;
+}
+
+.cloud-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(167, 139, 250, 0.3) 0%, rgba(56, 189, 248, 0.3) 50%, rgba(255, 255, 255, 0) 100%);
+    z-index: 2;
+}
+
+.cloud-card:hover {
+    border-color: rgba(167, 139, 250, 0.2);
+}
+
+.cloud-card-inner {
+    padding: var(--gap-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-lg);
+}
+
+.cloud-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: var(--gap-md);
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.cloud-header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-md);
+}
+
+.cloud-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: rgba(167, 139, 250, 0.1);
+    color: var(--chart-purple);
+    box-shadow: 0 0 15px rgba(167, 139, 250, 0.1);
+}
+
+.cloud-header-titles h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+.cloud-header-subtitle {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+/* Status Badge Styles */
+.cloud-status-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-xs);
+    padding: 6px 12px;
+    border-radius: 100px;
+    background: var(--bg-glass);
+    border: 1px solid var(--border-glass);
+    font-size: 0.7rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.cloud-status-badge .cloud-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: all 0.3s ease;
+}
+
+.cloud-status-badge.unauth {
+    color: var(--text-secondary);
+}
+
+.cloud-status-badge.auth {
+    color: var(--chart-blue);
+    border-color: rgba(56, 189, 248, 0.2);
+    background: rgba(56, 189, 248, 0.05);
+}
+
+.cloud-status-badge.auth .cloud-status-dot {
+    background: var(--chart-blue);
+    box-shadow: 0 0 8px var(--chart-blue);
+}
+
+.cloud-status-badge.recording {
+    color: var(--color-bad);
+    border-color: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.cloud-status-badge.recording .cloud-status-dot {
+    background: var(--color-bad);
+    box-shadow: 0 0 8px var(--color-bad);
+    animation: pulse 1.5s infinite;
+}
+
+.cloud-card-body {
+    position: relative;
+    min-height: 100px;
+}
+
+/* Loading state */
+.cloud-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-sm);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    padding: var(--gap-xl) 0;
+}
+
+/* Grid Layouts */
+.cloud-unauth-grid,
+.cloud-auth-grid,
+.cloud-auth-layout {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: var(--gap-xl);
+}
+
+@media (max-width: 900px) {
+
+    .cloud-unauth-grid,
+    .cloud-auth-grid,
+    .cloud-auth-layout {
+        grid-template-columns: 1fr;
+        gap: var(--gap-lg);
+    }
+}
+
+/* Benefits panel */
+.cloud-benefits-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--gap-md);
+}
+
+.cloud-info-desc {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.cloud-benefits-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-sm);
+}
+
+.cloud-benefits-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--gap-md);
+    padding: var(--gap-sm);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.02);
+    transition: all 0.2s ease;
+}
+
+.cloud-benefits-list li:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.benefit-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.benefit-desc strong {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--text-primary);
+}
+
+.benefit-desc span {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* Login panel */
+.cloud-login-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-wrapper {
+    width: 100%;
+    max-width: 320px;
+    padding: var(--gap-lg);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-glass);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--gap-md);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.login-decor {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(167, 139, 250, 0.08);
+    color: var(--chart-purple);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px rgba(167, 139, 250, 0.08);
+}
+
+.login-wrapper h3 {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.login-wrapper p {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.cloud-signin-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cloud-signin-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    transform: translateY(-1px);
+}
+
+.cloud-signin-btn:active {
+    transform: scale(0.98) translateY(0);
+}
+
+/* Authenticated Panel & Creator Box */
+.cloud-session-creation-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-md);
+}
+
+.profile-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--gap-sm) var(--gap-md);
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-md);
+}
+
+.cloud-user-info {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-sm);
+    min-width: 0;
+}
+
+.cloud-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(167, 139, 250, 0.3);
+}
+
+.cloud-avatar-placeholder {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--gradient-brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: white;
+}
+
+.user-meta-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cloud-user-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cloud-user-email {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cloud-signout-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.04);
+    color: var(--color-bad);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.cloud-signout-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+.session-creator-box {
+    padding: var(--gap-md);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-glass);
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-sm);
+}
+
+.session-creator-box h3 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.creator-box-desc {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.session-form-controls {
+    display: flex;
+    gap: var(--gap-sm);
+    margin-top: var(--gap-xs);
+}
+
+.cloud-session-input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 14px;
+    border: 1px solid var(--border-glass);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    border-radius: 6px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.cloud-session-input::placeholder {
+    color: var(--text-muted);
+}
+
+.cloud-session-input:focus {
+    border-color: rgba(167, 139, 250, 0.4);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.1);
+}
+
+.cloud-start-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    background: var(--gradient-brand);
+    color: white;
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 10px rgba(129, 140, 248, 0.2);
+}
+
+.cloud-start-btn:hover {
+    box-shadow: 0 4px 15px rgba(129, 140, 248, 0.35);
+    transform: translateY(-1px);
+}
+
+.cloud-start-btn:active {
+    transform: scale(0.98) translateY(0);
+}
+
+/* Live Recording Dashboard */
+.cloud-recording-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-md);
+}
+
+.recording-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.recording-label-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 100px;
+    color: var(--color-bad);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+.cloud-recording-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-bad);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    animation: recordPulse 1.5s infinite;
+}
+
+.cloud-session-elapsed {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+.recording-dashboard {
+    padding: var(--gap-md);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-glass);
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-md);
+}
+
+.active-session-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-left: 3px solid var(--chart-purple);
+    padding-left: var(--gap-sm);
+}
+
+.session-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--gap-sm);
+}
+
+.session-stat-card {
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid var(--border-glass);
+    border-radius: 6px;
+    padding: var(--gap-sm) var(--gap-md);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.session-stat-card .stat-label {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.session-stat-card .stat-val {
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.session-stat-card .status-syncing {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--color-good);
+}
+
+.session-stat-card .spinner {
+    animation: spin 1.8s linear infinite;
+    color: var(--color-good);
+}
+
+.cloud-stop-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px 16px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--color-bad);
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cloud-stop-btn:hover {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: rgba(239, 68, 68, 0.5);
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.15);
+    transform: translateY(-1px);
+}
+
+.cloud-stop-btn:active {
+    transform: scale(0.98) translateY(0);
+}
+
+/* Past Sessions List */
+.cloud-previous-sessions-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-sm);
+    min-height: 120px;
+}
+
+.cloud-previous-sessions-section h3 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-bottom: 2px;
+}
+
+.cloud-previous-sessions-list {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-right: 4px;
+}
+
+/* Scrollbar for sessions list */
+.cloud-previous-sessions-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.cloud-previous-sessions-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.cloud-previous-sessions-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+}
+
+.cloud-previous-sessions-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.cloud-sessions-loading,
+.cloud-sessions-empty,
+.cloud-sessions-error {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: var(--gap-md) 0;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    text-align: center;
+    border: 1px dashed var(--border-glass);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.005);
+}
+
+.cloud-sessions-loading .spinner {
+    animation: spin 1.8s linear infinite;
+}
+
+.cloud-session-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--gap-xs) var(--gap-md);
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px solid var(--border-glass);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.cloud-session-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(167, 139, 250, 0.15);
+}
+
+.cloud-session-info-left {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    flex: 1;
+    padding-right: var(--gap-md);
+}
+
+.session-item-name {
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.session-item-date {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+}
+
+.cloud-session-info-right {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-sm);
+    flex-shrink: 0;
+}
+
+.session-item-duration {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+}
+
+.session-item-badge {
+    font-size: 0.6rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    color: var(--color-good);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+/* Spin animation for icons */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Pulsing red dot keyframe */
+@keyframes recordPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+        transform: scale(1);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+        transform: scale(1.05);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+        transform: scale(1);
+    }
+}
+
 @media (max-width: 1024px) {
     .card-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -868,4 +1691,533 @@ footer {
 
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
+}
+
+/* --- Header Authentication & Multi-Page Navigation --- */
+.logo-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+}
+
+.logo-link:hover .logo {
+    transform: scale(1.02);
+}
+
+.logo {
+    transition: transform 0.2s ease;
+}
+
+.back-dashboard-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    margin-left: var(--gap-md);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.back-dashboard-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    border-color: var(--border-glass-hover);
+    transform: translateX(-2px);
+}
+
+.header-auth {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--gap-md);
+}
+
+.header-auth-loading {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Header Google Sign In Button */
+.header-signin-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border: 1px solid rgba(167, 139, 250, 0.2);
+    background: rgba(167, 139, 250, 0.05);
+    color: var(--chart-purple);
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 10px rgba(167, 139, 250, 0.05);
+}
+
+.header-signin-btn:hover {
+    background: rgba(167, 139, 250, 0.12);
+    border-color: rgba(167, 139, 250, 0.4);
+    box-shadow: 0 0 15px rgba(167, 139, 250, 0.15);
+    transform: translateY(-1px);
+}
+
+.header-signin-btn:active {
+    transform: scale(0.97) translateY(0);
+}
+
+/* Profile Trigger */
+.header-profile-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+    padding: 2px;
+    background: transparent;
+    border: 1px solid var(--border-glass);
+    transition: all 0.2s ease;
+}
+
+.header-profile-trigger:hover, .header-profile-trigger.active {
+    border-color: rgba(167, 139, 250, 0.4);
+    box-shadow: 0 0 12px rgba(167, 139, 250, 0.15);
+}
+
+.header-profile-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.header-profile-avatar-placeholder {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--gradient-brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: white;
+}
+
+/* Premium Authentication Dropdown Menu */
+.auth-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 220px;
+    background: rgba(17, 24, 39, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-glass-hover);
+    border-radius: var(--radius-md);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(255, 255, 255, 0.05);
+    z-index: 1000;
+    padding: var(--gap-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-md);
+    transform: translateY(-10px);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-dropdown.open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.auth-dropdown-user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-bottom: var(--gap-sm);
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.auth-dropdown-user-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.auth-dropdown-user-email {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.auth-dropdown-links {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.auth-dropdown-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    color: var(--text-secondary);
+    font-size: 0.74rem;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.auth-dropdown-link svg {
+    color: var(--text-muted);
+    transition: color 0.2s ease;
+}
+
+.auth-dropdown-link:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+}
+
+.auth-dropdown-link:hover svg {
+    color: var(--chart-purple);
+}
+
+.auth-dropdown-signout-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.04);
+    color: var(--color-bad);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 0.74rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.auth-dropdown-signout-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Dedicated Cloud Page Adjustments */
+.cloud-console-main {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: var(--gap-xl);
+}
+
+/* --- What Gets Tracked Explainer --- */
+.tracking-explainer {
+    margin-top: var(--gap-lg);
+    padding: var(--gap-lg);
+    background: rgba(167, 139, 250, 0.03);
+    border: 1px solid rgba(167, 139, 250, 0.1);
+    border-radius: var(--radius-md);
+}
+
+.tracking-explainer-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--gap-md);
+}
+
+.tracking-explainer-title svg {
+    color: var(--chart-purple);
+    opacity: 0.7;
+}
+
+.tracking-metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.tracking-metric-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.tracking-metric-card:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+    transform: translateX(2px);
+}
+
+.tracking-metric-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+    width: 28px;
+    text-align: center;
+}
+
+.tracking-metric-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.tracking-metric-name {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.tracking-metric-desc {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+.tracking-explainer-note {
+    margin-top: var(--gap-md);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    padding-top: var(--gap-sm);
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.tracking-explainer-note strong {
+    color: var(--text-secondary);
+}
+
+/* --- Live Metrics During Recording --- */
+.recording-live-metrics {
+    margin-top: var(--gap-lg);
+    padding: var(--gap-md);
+    background: rgba(239, 68, 68, 0.03);
+    border: 1px solid rgba(239, 68, 68, 0.08);
+    border-radius: var(--radius-md);
+}
+
+.live-metrics-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--color-bad);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: var(--gap-md);
+}
+
+.live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-bad);
+    animation: recordPulse 1.5s infinite;
+}
+
+.live-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.live-metric-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 10px 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+}
+
+.live-metric-label {
+    font-size: 0.58rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.live-metric-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    transition: color 0.3s ease;
+}
+
+.live-metric-value.live-metric-text {
+    font-size: 0.72rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+.live-metric-unit {
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+/* --- Session Viewer Summary Stats --- */
+.viewer-summary-grid {
+    display: grid;
+}
+
+.summary-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.summary-stat-card:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.summary-stat-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.summary-stat-data {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.summary-stat-value {
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.summary-stat-unit {
+    font-size: 0.55rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 2px;
+}
+
+.summary-stat-label {
+    font-size: 0.58rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+@media (max-width: 700px) {
+    .viewer-summary-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+    .live-metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .tracking-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- Improved Session Item Badges --- */
+.session-view-badge {
+    background: rgba(56, 189, 248, 0.08) !important;
+    border-color: rgba(56, 189, 248, 0.2) !important;
+    color: var(--chart-blue) !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.session-view-badge:hover {
+    background: rgba(56, 189, 248, 0.15) !important;
+    border-color: rgba(56, 189, 248, 0.4) !important;
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.1);
+}
+
+.session-delete-badge {
+    background: rgba(239, 68, 68, 0.06) !important;
+    border-color: rgba(239, 68, 68, 0.15) !important;
+    color: var(--color-bad) !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.session-delete-badge:hover {
+    background: rgba(239, 68, 68, 0.12) !important;
+    border-color: rgba(239, 68, 68, 0.35) !important;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.1);
+}
+
+.cloud-session-item {
+    cursor: pointer;
+}
+
+/* --- Session Viewer Empty/Error States --- */
+.viewer-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--gap-sm);
+    padding: var(--gap-xl) var(--gap-lg);
+    text-align: center;
+}
+
+.viewer-empty-state h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.viewer-empty-state p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    max-width: 380px;
+    line-height: 1.5;
+}
+
+.viewer-empty-state.error h3 {
+    color: var(--color-bad);
 }

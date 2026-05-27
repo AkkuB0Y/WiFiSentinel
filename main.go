@@ -16,6 +16,9 @@
 //	SENTINEL_DB_PATH         SQLite database path (default: "./sentinel.db")
 //	SENTINEL_HTTP_PORT       HTTP server port (default: 8080)
 //	SENTINEL_RETENTION_DAYS  Days to retain data (default: 7)
+//	SENTINEL_CLOUD_ENABLED   Enable Firebase cloud sync (default: false)
+//	SENTINEL_FIREBASE_PROJECT Firebase project ID
+//	SENTINEL_FIREBASE_API_KEY Firebase Web API key
 package main
 
 import (
@@ -29,6 +32,7 @@ import (
 	"time"
 
 	"wifimonitor/internal/api"
+	"wifimonitor/internal/cloud"
 	"wifimonitor/internal/collector"
 	"wifimonitor/internal/config"
 	"wifimonitor/internal/db"
@@ -49,8 +53,8 @@ func main() {
 
 	// Load configuration
 	cfg := config.LoadConfig()
-	log.Printf("config: targets=%v interval=%s port=%d retention=%dd db=%s speedtest=%s",
-		cfg.PingTargets, cfg.PollInterval, cfg.HTTPPort, cfg.RetentionDays, cfg.DBPath, cfg.SpeedTestInterval)
+	log.Printf("config: targets=%v interval=%s port=%d retention=%dd db=%s speedtest=%s cloud=%v",
+		cfg.PingTargets, cfg.PollInterval, cfg.HTTPPort, cfg.RetentionDays, cfg.DBPath, cfg.SpeedTestInterval, cfg.CloudEnabled)
 
 	// Initialize database
 	store, err := db.NewStore(cfg.DBPath)
@@ -64,6 +68,25 @@ func main() {
 	staticFS, err := web.GetFileSystem()
 	if err != nil {
 		log.Fatalf("failed to load embedded frontend: %v", err)
+	}
+
+	// --- Cloud / Firebase Setup ---
+	var firebaseClient *cloud.FirebaseClient
+	var sessionMgr *cloud.SessionManager
+	var sampleBuffer *cloud.SampleBuffer
+	var speedTestBuffer *cloud.SpeedTestBuffer
+
+	if cfg.CloudEnabled {
+		if cfg.FirebaseProjectID == "" {
+			log.Println("[cloud] WARNING: cloud enabled but SENTINEL_FIREBASE_PROJECT not set")
+		}
+		firebaseClient = cloud.NewFirebaseClient(cfg.FirebaseProjectID, cfg.FirebaseAPIKey)
+		sampleBuffer = cloud.NewSampleBuffer()
+		speedTestBuffer = cloud.NewSpeedTestBuffer()
+		sessionMgr = cloud.NewSessionManager(firebaseClient, sampleBuffer, speedTestBuffer)
+		log.Printf("[cloud] Firebase cloud mode enabled — project: %s", cfg.FirebaseProjectID)
+	} else {
+		log.Println("[cloud] cloud mode disabled — local-only operation")
 	}
 
 	// Create speed tester with DB storage callback
@@ -83,17 +106,29 @@ func main() {
 		if err := store.InsertSpeedTest(sample); err != nil {
 			log.Printf("[speedtest] failed to store result: %v", err)
 		}
+
+		// Also buffer for cloud upload if session is active
+		if speedTestBuffer != nil && sessionMgr != nil && sessionMgr.HasActiveSession() {
+			speedTestBuffer.Add(cloud.SpeedTestData{
+				Timestamp:    result.Timestamp,
+				DownloadMbps: result.DownloadMbps,
+				UploadMbps:   result.UploadMbps,
+				JitterMs:     result.JitterMs,
+				LatencyMs:    result.LatencyMs,
+				ServerName:   result.ServerName,
+			})
+		}
 	})
 
 	// Create HTTP server
-	server := api.NewServer(cfg, store, staticFS, speedTester)
+	server := api.NewServer(cfg, store, staticFS, speedTester, sessionMgr, firebaseClient)
 
 	// Create context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// Start collector in background goroutine
-	coll := collector.NewCollector(cfg, store)
+	coll := collector.NewCollector(cfg, store, sampleBuffer, sessionMgr)
 	go coll.Start(ctx)
 
 	// Start automatic speed test scheduler if interval > 0
@@ -138,6 +173,13 @@ func main() {
 	go func() {
 		sig := <-sigChan
 		log.Printf("received signal: %v — shutting down...", sig)
+
+		// Stop any active cloud session gracefully
+		if sessionMgr != nil && sessionMgr.HasActiveSession() {
+			log.Println("[cloud] stopping active session before shutdown...")
+			sessionMgr.StopSession()
+		}
+
 		cancel() // Stop collector
 
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -156,3 +198,4 @@ func main() {
 
 	log.Println("WiFi Sentinel stopped.")
 }
+

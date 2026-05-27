@@ -37,6 +37,13 @@ const SentinelApp = (() => {
         // Load config for footer
         loadConfig();
 
+        // Initialize cloud module (non-blocking)
+        if (typeof SentinelCloud !== 'undefined') {
+            SentinelCloud.init().catch(err => {
+                console.warn('[sentinel] cloud init error:', err);
+            });
+        }
+
         // Start polling
         poll();
         pollTimer = setInterval(poll, POLL_INTERVAL);
