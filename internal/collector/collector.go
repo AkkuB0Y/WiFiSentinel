@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"wifimonitor/internal/alerts"
 	"wifimonitor/internal/cloud"
 	"wifimonitor/internal/config"
 	"wifimonitor/internal/db"
@@ -16,21 +17,23 @@ import (
 // Collector orchestrates periodic network health data collection.
 // It pings configured targets, gathers WiFi info, and stores results in the database.
 type Collector struct {
-	cfg        *config.Config
-	store      *db.Store
-	ticks      uint64 // counts ticks for periodic maintenance
-	cloudBuf   *cloud.SampleBuffer
-	sessionMgr *cloud.SessionManager
+	cfg         *config.Config
+	store       *db.Store
+	ticks       uint64 // counts ticks for periodic maintenance
+	cloudBuf    *cloud.SampleBuffer
+	sessionMgr  *cloud.SessionManager
+	alertEngine *alerts.AlertEngine
 }
 
 // NewCollector creates a new Collector with the given configuration and database store.
-// cloudBuf and sessionMgr may be nil when cloud mode is disabled.
-func NewCollector(cfg *config.Config, store *db.Store, cloudBuf *cloud.SampleBuffer, sessionMgr *cloud.SessionManager) *Collector {
+// cloudBuf, sessionMgr, and alertEngine may be nil when their respective features are disabled.
+func NewCollector(cfg *config.Config, store *db.Store, cloudBuf *cloud.SampleBuffer, sessionMgr *cloud.SessionManager, alertEngine *alerts.AlertEngine) *Collector {
 	return &Collector{
-		cfg:        cfg,
-		store:      store,
-		cloudBuf:   cloudBuf,
-		sessionMgr: sessionMgr,
+		cfg:         cfg,
+		store:       store,
+		cloudBuf:    cloudBuf,
+		sessionMgr:  sessionMgr,
+		alertEngine: alertEngine,
 	}
 }
 
@@ -105,6 +108,11 @@ func (c *Collector) collect(ctx context.Context) {
 				WifiNoise:   wifi.Noise,
 				WifiChannel: wifi.Channel,
 			})
+		}
+
+		// Evaluate alert rules against this sample (non-blocking)
+		if c.alertEngine != nil {
+			go c.alertEngine.Evaluate(sample)
 		}
 
 		if pr.Err != nil {

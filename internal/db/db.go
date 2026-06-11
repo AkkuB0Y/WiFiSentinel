@@ -72,6 +72,38 @@ func (s *Store) migrate() error {
 	);
 
 	CREATE INDEX IF NOT EXISTS idx_speedtest_timestamp ON speed_test_samples(timestamp);
+
+	CREATE TABLE IF NOT EXISTS webhook_configs (
+		id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+		name                  TEXT NOT NULL DEFAULT 'My Webhook',
+		url                   TEXT NOT NULL,
+		platform              TEXT NOT NULL DEFAULT 'generic',
+		enabled               INTEGER NOT NULL DEFAULT 1,
+		latency_threshold     REAL DEFAULT NULL,
+		packet_loss_threshold REAL DEFAULT NULL,
+		signal_threshold      INTEGER DEFAULT NULL,
+		connection_lost       INTEGER NOT NULL DEFAULT 1,
+		cooldown_minutes      INTEGER NOT NULL DEFAULT 5,
+		notify_recovery       INTEGER NOT NULL DEFAULT 0,
+		created_at            DATETIME NOT NULL DEFAULT (datetime('now')),
+		updated_at            DATETIME NOT NULL DEFAULT (datetime('now'))
+	);
+
+	CREATE TABLE IF NOT EXISTS alert_history (
+		id            INTEGER PRIMARY KEY AUTOINCREMENT,
+		webhook_id    INTEGER NOT NULL,
+		condition     TEXT NOT NULL,
+		severity      TEXT NOT NULL,
+		message       TEXT NOT NULL,
+		value         REAL NOT NULL,
+		threshold     REAL NOT NULL,
+		fired_at      DATETIME NOT NULL DEFAULT (datetime('now')),
+		delivered     INTEGER NOT NULL DEFAULT 0,
+		FOREIGN KEY (webhook_id) REFERENCES webhook_configs(id) ON DELETE CASCADE
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_alert_history_fired ON alert_history(fired_at);
+	CREATE INDEX IF NOT EXISTS idx_alert_history_webhook ON alert_history(webhook_id);
 	`
 	_, err := s.db.Exec(schema)
 	return err
@@ -318,3 +350,240 @@ func scanSample(row scannable) (*NetworkSample, error) {
 	sample.Timestamp, _ = time.Parse(time.RFC3339, ts)
 	return &sample, nil
 }
+
+
+// --- Webhook Config Methods ---
+
+// GetWebhookConfigs returns all webhook configurations.
+func (s *Store) GetWebhookConfigs() ([]WebhookConfig, error) {
+	query := `
+	SELECT id, name, url, platform, enabled, latency_threshold, packet_loss_threshold,
+	       signal_threshold, connection_lost, cooldown_minutes, notify_recovery, created_at, updated_at
+	FROM webhook_configs
+	ORDER BY created_at ASC
+	`
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var configs []WebhookConfig
+	for rows.Next() {
+		var cfg WebhookConfig
+		var enabled, connLost, notifyRecovery int
+		var createdAt, updatedAt string
+		var latencyThresh, lossThresh sql.NullFloat64
+		var signalThresh sql.NullInt64
+
+		err := rows.Scan(
+			&cfg.ID, &cfg.Name, &cfg.URL, &cfg.Platform,
+			&enabled, &latencyThresh, &lossThresh,
+			&signalThresh, &connLost, &cfg.CooldownMinutes,
+			&notifyRecovery, &createdAt, &updatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		cfg.Enabled = enabled == 1
+		cfg.ConnectionLost = connLost == 1
+		cfg.NotifyRecovery = notifyRecovery == 1
+		if latencyThresh.Valid {
+			v := latencyThresh.Float64
+			cfg.LatencyThreshold = &v
+		}
+		if lossThresh.Valid {
+			v := lossThresh.Float64
+			cfg.PacketLossThreshold = &v
+		}
+		if signalThresh.Valid {
+			v := int(signalThresh.Int64)
+			cfg.SignalThreshold = &v
+		}
+		cfg.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
+		cfg.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
+
+		configs = append(configs, cfg)
+	}
+	return configs, rows.Err()
+}
+
+// GetWebhookConfig returns a single webhook configuration by ID.
+func (s *Store) GetWebhookConfig(id int64) (*WebhookConfig, error) {
+	query := `
+	SELECT id, name, url, platform, enabled, latency_threshold, packet_loss_threshold,
+	       signal_threshold, connection_lost, cooldown_minutes, notify_recovery, created_at, updated_at
+	FROM webhook_configs WHERE id = ?
+	`
+	var cfg WebhookConfig
+	var enabled, connLost, notifyRecovery int
+	var createdAt, updatedAt string
+	var latencyThresh, lossThresh sql.NullFloat64
+	var signalThresh sql.NullInt64
+
+	err := s.db.QueryRow(query, id).Scan(
+		&cfg.ID, &cfg.Name, &cfg.URL, &cfg.Platform,
+		&enabled, &latencyThresh, &lossThresh,
+		&signalThresh, &connLost, &cfg.CooldownMinutes,
+		&notifyRecovery, &createdAt, &updatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.Enabled = enabled == 1
+	cfg.ConnectionLost = connLost == 1
+	cfg.NotifyRecovery = notifyRecovery == 1
+	if latencyThresh.Valid {
+		v := latencyThresh.Float64
+		cfg.LatencyThreshold = &v
+	}
+	if lossThresh.Valid {
+		v := lossThresh.Float64
+		cfg.PacketLossThreshold = &v
+	}
+	if signalThresh.Valid {
+		v := int(signalThresh.Int64)
+		cfg.SignalThreshold = &v
+	}
+	cfg.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
+	cfg.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
+
+	return &cfg, nil
+}
+
+// CreateWebhookConfig inserts a new webhook configuration and returns its ID.
+func (s *Store) CreateWebhookConfig(cfg WebhookConfig) (int64, error) {
+	boolToInt := func(b bool) int {
+		if b {
+			return 1
+		}
+		return 0
+	}
+
+	query := `
+	INSERT INTO webhook_configs (name, url, platform, enabled, latency_threshold, packet_loss_threshold,
+	                             signal_threshold, connection_lost, cooldown_minutes, notify_recovery)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`
+	result, err := s.db.Exec(query,
+		cfg.Name, cfg.URL, cfg.Platform,
+		boolToInt(cfg.Enabled),
+		cfg.LatencyThreshold, cfg.PacketLossThreshold, cfg.SignalThreshold,
+		boolToInt(cfg.ConnectionLost),
+		cfg.CooldownMinutes,
+		boolToInt(cfg.NotifyRecovery),
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+// UpdateWebhookConfig updates an existing webhook configuration.
+func (s *Store) UpdateWebhookConfig(cfg WebhookConfig) error {
+	boolToInt := func(b bool) int {
+		if b {
+			return 1
+		}
+		return 0
+	}
+
+	query := `
+	UPDATE webhook_configs
+	SET name = ?, url = ?, platform = ?, enabled = ?, latency_threshold = ?,
+	    packet_loss_threshold = ?, signal_threshold = ?, connection_lost = ?,
+	    cooldown_minutes = ?, notify_recovery = ?, updated_at = datetime('now')
+	WHERE id = ?
+	`
+	_, err := s.db.Exec(query,
+		cfg.Name, cfg.URL, cfg.Platform,
+		boolToInt(cfg.Enabled),
+		cfg.LatencyThreshold, cfg.PacketLossThreshold, cfg.SignalThreshold,
+		boolToInt(cfg.ConnectionLost),
+		cfg.CooldownMinutes,
+		boolToInt(cfg.NotifyRecovery),
+		cfg.ID,
+	)
+	return err
+}
+
+// DeleteWebhookConfig removes a webhook configuration by ID.
+func (s *Store) DeleteWebhookConfig(id int64) error {
+	_, err := s.db.Exec("DELETE FROM webhook_configs WHERE id = ?", id)
+	return err
+}
+
+// --- Alert History Methods ---
+
+// InsertAlertHistory records an alert that was fired.
+func (s *Store) InsertAlertHistory(entry AlertHistoryEntry) error {
+	delivered := 0
+	if entry.Delivered {
+		delivered = 1
+	}
+
+	query := `
+	INSERT INTO alert_history (webhook_id, condition, severity, message, value, threshold, fired_at, delivered)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`
+	_, err := s.db.Exec(query,
+		entry.WebhookID, entry.Condition, entry.Severity, entry.Message,
+		entry.Value, entry.Threshold,
+		entry.FiredAt.UTC().Format(time.RFC3339),
+		delivered,
+	)
+	return err
+}
+
+// GetAlertHistory retrieves recent alert history entries.
+func (s *Store) GetAlertHistory(since time.Time, limit int) ([]AlertHistoryEntry, error) {
+	query := `
+	SELECT id, webhook_id, condition, severity, message, value, threshold, fired_at, delivered
+	FROM alert_history
+	WHERE fired_at >= ?
+	ORDER BY fired_at DESC
+	LIMIT ?
+	`
+	rows, err := s.db.Query(query, since.UTC().Format(time.RFC3339), limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var entries []AlertHistoryEntry
+	for rows.Next() {
+		var e AlertHistoryEntry
+		var ts string
+		var delivered int
+
+		err := rows.Scan(
+			&e.ID, &e.WebhookID, &e.Condition, &e.Severity,
+			&e.Message, &e.Value, &e.Threshold, &ts, &delivered,
+		)
+		if err != nil {
+			return nil, err
+		}
+		e.FiredAt, _ = time.Parse(time.RFC3339, ts)
+		e.Delivered = delivered == 1
+		entries = append(entries, e)
+	}
+	return entries, rows.Err()
+}
+
+// PruneAlertHistory deletes alert history entries older than the given time.
+func (s *Store) PruneAlertHistory(olderThan time.Time) (int64, error) {
+	result, err := s.db.Exec(
+		"DELETE FROM alert_history WHERE fired_at < ?",
+		olderThan.UTC().Format(time.RFC3339),
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
