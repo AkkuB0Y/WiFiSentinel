@@ -690,6 +690,20 @@ func (h *Handlers) handleUpdateWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if existing, err := h.Store.GetWebhookConfig(cfg.ID); err == nil && existing != nil {
+		cfg.Enabled = existing.Enabled
+		cfg.ConnectionLost = existing.ConnectionLost
+		if cfg.Platform == "" {
+			cfg.Platform = existing.Platform
+		}
+	} else {
+		cfg.Enabled = true
+		cfg.ConnectionLost = true
+	}
+	if cfg.CooldownMinutes <= 0 {
+		cfg.CooldownMinutes = 5
+	}
+
 	if err := h.Store.UpdateWebhookConfig(cfg); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to update webhook")
 		log.Printf("[api] update webhook error: %v", err)
