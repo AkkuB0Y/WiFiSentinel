@@ -54,6 +54,9 @@ func main() {
   Local Network Health Monitor v1.0
 	`)
 
+	// Log platform information
+	collector.LogPlatformInfo()
+
 	// Load configuration
 	cfg := config.LoadConfig()
 	log.Printf("config: targets=%v interval=%s port=%d retention=%dd db=%s speedtest=%s cloud=%v",

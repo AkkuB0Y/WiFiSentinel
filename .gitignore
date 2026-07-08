@@ -37,3 +37,6 @@ Thumbs.db
 # Environment credentials
 .env
 start.sh
+
+# Plans
+.cursor/plans/

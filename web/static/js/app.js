@@ -12,6 +12,7 @@ const SentinelApp = (() => {
     let consecutiveErrors = 0;
     let speedTestRunning = false;
     let speedTestPollTimer = null;
+    let platformInfo = null;
 
     // Time range → { since offset, bucket size in minutes }
     const RANGE_CONFIG = {
@@ -177,11 +178,14 @@ const SentinelApp = (() => {
         const sigVal = document.getElementById('val-signal');
         const sigInd = document.getElementById('indicator-signal');
         const rssi = data.wifi_rssi;
-        sigVal.textContent = rssi !== 0 ? rssi : '—';
+        const rssiEstimated = data.wifi_rssi_estimated || (platformInfo && platformInfo.rssi_estimated);
+        sigVal.textContent = formatRssiValue(rssi, rssiEstimated);
         sigVal.classList.add('value-flash');
         setTimeout(() => sigVal.classList.remove('value-flash'), 400);
 
-        if (rssi === 0) {
+        if (!isWifiMonitoringAvailable() && rssi === 0) {
+            sigInd.className = 'card-indicator';
+        } else if (rssi === 0) {
             sigInd.className = 'card-indicator';
         } else if (rssi >= -50) {
             sigInd.className = 'card-indicator good';
@@ -199,6 +203,13 @@ const SentinelApp = (() => {
         // redaction even when connected (RSSI non-zero).
         const ssid = data.wifi_ssid;
         const isConnected = ssid || rssi !== 0;
+        if (!isWifiMonitoringAvailable()) {
+            netVal.textContent = 'Unavailable';
+            chVal.textContent = platformInfo ? platformInfo.wifi_backend : 'No WiFi backend';
+            netInd.className = 'card-indicator';
+            return;
+        }
+
         if (ssid) {
             netVal.textContent = ssid;
         } else if (rssi !== 0) {
@@ -241,7 +252,7 @@ const SentinelApp = (() => {
                     <td class="${latClass}">${s.latency_ms > 0 ? s.latency_ms.toFixed(1) + ' ms' : '—'}</td>
                     <td class="${lossClass}">${s.packet_loss.toFixed(1)}%</td>
                     <td>${s.wifi_ssid || '—'}</td>
-                    <td class="${rssiClass}">${s.wifi_rssi !== 0 ? s.wifi_rssi + ' dBm' : '—'}</td>
+                    <td class="${rssiClass}">${formatRssiValue(s.wifi_rssi, s.wifi_rssi_estimated)}</td>
                     <td>${s.wifi_channel > 0 ? s.wifi_channel : '—'}</td>
                 </tr>`;
             }).join('');
@@ -277,14 +288,43 @@ const SentinelApp = (() => {
     async function loadConfig() {
         try {
             const cfg = await SentinelAPI.fetchConfig();
-            document.getElementById('footer-targets').textContent = 
+            platformInfo = cfg.platform || null;
+            document.getElementById('footer-targets').textContent =
                 `Targets: ${cfg.ping_targets.join(', ')}`;
-            document.getElementById('footer-interval').textContent = 
+            document.getElementById('footer-interval').textContent =
                 `Poll: ${cfg.poll_interval}`;
+
+            const sigUnit = document.querySelector('#card-signal .card-unit');
+            if (sigUnit) {
+                if (!isWifiMonitoringAvailable()) {
+                    sigUnit.textContent = 'N/A';
+                } else if (platformInfo && platformInfo.rssi_estimated) {
+                    sigUnit.textContent = 'dBm (est.)';
+                } else {
+                    sigUnit.textContent = 'dBm';
+                }
+            }
+
+            const platformEl = document.getElementById('footer-platform');
+            if (platformEl && platformInfo) {
+                platformEl.textContent = platformInfo.platform;
+            }
         } catch (err) {
             // Config display is non-critical
             console.warn('[sentinel] could not load config:', err);
         }
+    }
+
+    function isWifiMonitoringAvailable() {
+        return !platformInfo || platformInfo.wifi_supported;
+    }
+
+    function formatRssiValue(rssi, estimated) {
+        if (rssi === 0) {
+            return isWifiMonitoringAvailable() ? '—' : 'N/A';
+        }
+        const est = estimated || (platformInfo && platformInfo.rssi_estimated);
+        return est ? `~${rssi}` : String(rssi);
     }
 
     // --- Helper functions for status coloring ---
