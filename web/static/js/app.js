@@ -14,7 +14,7 @@ const SentinelApp = (() => {
     let speedTestPollTimer = null;
     let platformInfo = null;
 
-    // Time range → { since offset, bucket size in minutes }
+    // Time range mapping: { since offset, bucket size in minutes }
     const RANGE_CONFIG = {
         '1h':  { offsetMs: 60 * 60 * 1000,          bucket: 1  },
         '6h':  { offsetMs: 6 * 60 * 60 * 1000,      bucket: 5  },
