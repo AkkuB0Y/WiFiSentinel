@@ -38,7 +38,7 @@ func NewCollector(cfg *config.Config, store *db.Store, cloudBuf *cloud.SampleBuf
 // It blocks until the context is cancelled. This should be called in a goroutine.
 //
 // Each tick:
-//  1. Collects WiFi info (macOS only)
+//  1. Collects WiFi info (platform-specific backend)
 //  2. Pings all configured targets concurrently
 //  3. Stores results in the database
 //  4. Every 100 ticks, prunes old data based on retention policy
@@ -79,14 +79,16 @@ func (c *Collector) collect(ctx context.Context) {
 	// 3. Store each result as a sample
 	for _, pr := range results {
 		sample := db.NetworkSample{
-			Timestamp:   now,
-			Target:      pr.Target,
-			LatencyMs:   pr.LatencyMs,
-			PacketLoss:  pr.PacketLoss,
-			WifiSSID:    wifi.SSID,
-			WifiRSSI:    wifi.RSSI,
-			WifiNoise:   wifi.Noise,
-			WifiChannel: wifi.Channel,
+			Timestamp:          now,
+			Target:             pr.Target,
+			LatencyMs:          pr.LatencyMs,
+			PacketLoss:         pr.PacketLoss,
+			WifiSSID:           wifi.SSID,
+			WifiRSSI:           wifi.RSSI,
+			WifiNoise:          wifi.Noise,
+			WifiChannel:        wifi.Channel,
+			WifiRssiEstimated:  wifi.RSSIEstimated,
+			WifiNoiseAvailable: wifi.NoiseAvailable,
 		}
 
 		if err := c.store.InsertSample(sample); err != nil {

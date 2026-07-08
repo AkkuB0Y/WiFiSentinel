@@ -10,10 +10,12 @@ type NetworkSample struct {
 	Target      string    `json:"target"`       // ping target IP address
 	LatencyMs   float64   `json:"latency_ms"`   // round-trip time in milliseconds
 	PacketLoss  float64   `json:"packet_loss"`  // packet loss percentage (0-100)
-	WifiSSID    string    `json:"wifi_ssid"`     // connected WiFi network name
-	WifiRSSI    int       `json:"wifi_rssi"`     // signal strength in dBm (negative)
-	WifiNoise   int       `json:"wifi_noise"`    // noise level in dBm (negative)
-	WifiChannel int       `json:"wifi_channel"`  // WiFi channel number
+	WifiSSID           string    `json:"wifi_ssid"`              // connected WiFi network name
+	WifiRSSI           int       `json:"wifi_rssi"`              // signal strength in dBm (negative)
+	WifiNoise          int       `json:"wifi_noise"`             // noise level in dBm (negative)
+	WifiChannel        int       `json:"wifi_channel"`           // WiFi channel number
+	WifiRssiEstimated  bool      `json:"wifi_rssi_estimated"`    // true when RSSI is converted from quality %
+	WifiNoiseAvailable bool      `json:"wifi_noise_available"`   // true when noise was read from the OS
 }
 
 // AggregateBucket represents aggregated network metrics over a time bucket.

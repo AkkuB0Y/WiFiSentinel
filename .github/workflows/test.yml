@@ -1,0 +1,27 @@
+name: Test
+
+on:
+  push:
+    branches: [main, feat-multi-platform]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Run collector tests
+        run: go test -v ./internal/collector/...
+
+      - name: Build sentinel
+        run: go build -o sentinel .
