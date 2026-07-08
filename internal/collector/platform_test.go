@@ -65,3 +65,33 @@ func TestParseIndividualPings_Empty(t *testing.T) {
 		t.Errorf("parseIndividualPings('') = %f, want 0", avg)
 	}
 }
+
+func TestQualityPctToDbm(t *testing.T) {
+	tests := []struct {
+		pct  int
+		want int
+	}{
+		{100, -50},
+		{85, -58},
+		{72, -64},
+		{0, -100},
+	}
+	for _, tc := range tests {
+		if got := qualityPctToDbm(tc.pct); got != tc.want {
+			t.Errorf("qualityPctToDbm(%d) = %d, want %d", tc.pct, got, tc.want)
+		}
+	}
+}
+
+func TestGetPlatformCapabilities(t *testing.T) {
+	caps := GetPlatformCapabilities()
+	if caps.Platform == "" {
+		t.Error("Platform should not be empty")
+	}
+	if caps.WifiBackend == "" {
+		t.Error("WifiBackend should not be empty")
+	}
+	if caps.PingBackend == "" {
+		t.Error("PingBackend should not be empty")
+	}
+}

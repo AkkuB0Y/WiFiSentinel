@@ -7,7 +7,6 @@ import (
 )
 
 func TestWindowsPingParsing(t *testing.T) {
-	// Typical Windows ping output
 	input := `
 Pinging 8.8.8.8 with 32 bytes of data:
 Reply from 8.8.8.8: bytes=32 time=14ms TTL=117
@@ -19,22 +18,15 @@ Ping statistics for 8.8.8.8:
 Approximate round trip times in milli-seconds:
     Minimum = 13ms, Maximum = 15ms, Average = 14ms
 `
-	// Test packet loss parsing
-	if matches := windowsPacketLossRe.FindStringSubmatch(input); len(matches) > 1 {
-		if matches[1] != "0" {
-			t.Errorf("packet loss = %q, want %q", matches[1], "0")
-		}
-	} else {
-		t.Error("failed to parse packet loss from Windows ping output")
+
+	loss := parseWindowsPacketLoss(input)
+	if loss != 0 {
+		t.Errorf("packet loss = %f, want 0", loss)
 	}
 
-	// Test latency parsing
-	if matches := windowsStatsRe.FindStringSubmatch(input); len(matches) > 3 {
-		if matches[3] != "14" {
-			t.Errorf("average latency = %q, want %q", matches[3], "14")
-		}
-	} else {
-		t.Error("failed to parse latency statistics from Windows ping output")
+	latency := parseWindowsLatency(input)
+	if latency < 13.9 || latency > 14.1 {
+		t.Errorf("average latency = %f, want ~14", latency)
 	}
 }
 
@@ -50,12 +42,10 @@ Ping statistics for 10.0.0.1:
 Approximate round trip times in milli-seconds:
     Minimum = 5ms, Maximum = 8ms, Average = 6ms
 `
-	if matches := windowsPacketLossRe.FindStringSubmatch(input); len(matches) > 1 {
-		if matches[1] != "33" {
-			t.Errorf("packet loss = %q, want %q", matches[1], "33")
-		}
-	} else {
-		t.Error("failed to parse packet loss")
+
+	loss := parseWindowsPacketLoss(input)
+	if loss != 33 {
+		t.Errorf("packet loss = %f, want 33", loss)
 	}
 }
 
@@ -69,16 +59,27 @@ Request timed out.
 Ping statistics for 192.168.99.99:
     Packets: Sent = 3, Received = 0, Lost = 3 (100% loss),
 `
-	if matches := windowsPacketLossRe.FindStringSubmatch(input); len(matches) > 1 {
-		if matches[1] != "100" {
-			t.Errorf("packet loss = %q, want %q", matches[1], "100")
-		}
-	} else {
-		t.Error("failed to parse 100% packet loss")
+
+	loss := parseWindowsPacketLoss(input)
+	if loss != 100 {
+		t.Errorf("packet loss = %f, want 100", loss)
 	}
 
-	// No stats line should exist for total loss
-	if matches := windowsStatsRe.FindStringSubmatch(input); len(matches) > 0 {
-		t.Error("should not have latency stats with 100% loss")
+	if latency := parseWindowsLatency(input); latency != 0 {
+		t.Errorf("latency = %f, want 0 with 100%% loss", latency)
+	}
+}
+
+func TestWindowsPingParsing_FrenchReplyLines(t *testing.T) {
+	input := `
+Envoi d'une requête 'Ping'  8.8.8.8 avec 32 octets de données :
+Réponse de 8.8.8.8 : octets=32 temps=12 ms TTL=117
+Réponse de 8.8.8.8 : octets=32 temps=14 ms TTL=117
+Réponse de 8.8.8.8 : octets=32 temps=16 ms TTL=117
+`
+
+	latency := parseWindowsLatency(input)
+	if latency < 13.9 || latency > 14.1 {
+		t.Errorf("average latency = %f, want ~14 from French reply lines", latency)
 	}
 }

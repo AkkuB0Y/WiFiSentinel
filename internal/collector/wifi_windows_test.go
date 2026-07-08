@@ -88,7 +88,7 @@ There are 2 interfaces on the system:
 	info := parseNetshOutput(input)
 
 	if info.SSID != "PrimaryNetwork" {
-		t.Errorf("SSID = %q, want %q (first interface)", info.SSID, "PrimaryNetwork")
+		t.Errorf("SSID = %q, want %q (strongest signal)", info.SSID, "PrimaryNetwork")
 	}
 	if info.Channel != 36 {
 		t.Errorf("Channel = %d, want %d", info.Channel, 36)

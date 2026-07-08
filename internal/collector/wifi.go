@@ -11,8 +11,16 @@ package collector
 // All platform backends populate this same struct; some fields may be
 // unavailable on certain platforms (e.g., Noise is not reported on Windows).
 type WifiInfo struct {
-	SSID    string // connected network name
-	RSSI    int    // signal strength in dBm (negative, closer to 0 = stronger)
-	Noise   int    // noise level in dBm (negative); 0 if unavailable
-	Channel int    // WiFi channel number
+	SSID           string // connected network name
+	RSSI           int    // signal strength in dBm (negative, closer to 0 = stronger)
+	Noise          int    // noise level in dBm (negative); 0 if unavailable
+	Channel        int    // WiFi channel number
+	RSSIEstimated  bool   // true when RSSI was converted from a 0-100 quality score
+	NoiseAvailable bool   // true when Noise was read from the OS (not merely default 0)
+}
+
+// qualityPctToDbm converts a 0-100 signal quality percentage to approximate dBm.
+// Used by Windows netsh and Linux nmcli backends; not comparable to true dBm readings.
+func qualityPctToDbm(pct int) int {
+	return (pct / 2) - 100
 }

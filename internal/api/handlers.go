@@ -139,13 +139,14 @@ func (h *Handlers) HandleGetAggregates(w http.ResponseWriter, r *http.Request) {
 // GET /api/config
 func (h *Handlers) HandleGetConfig(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"ping_targets":    h.Config.PingTargets,
-		"poll_interval":   h.Config.PollInterval.String(),
-		"retention_days":  h.Config.RetentionDays,
-		"http_port":       h.Config.HTTPPort,
-		"cloud_enabled":   h.Config.CloudEnabled,
+		"ping_targets":     h.Config.PingTargets,
+		"poll_interval":    h.Config.PollInterval.String(),
+		"retention_days":   h.Config.RetentionDays,
+		"http_port":        h.Config.HTTPPort,
+		"cloud_enabled":    h.Config.CloudEnabled,
 		"firebase_project": h.Config.FirebaseProjectID,
 		"firebase_api_key": h.Config.FirebaseAPIKey,
+		"platform":         collector.GetPlatformCapabilities(),
 	})
 }
 

@@ -81,6 +81,9 @@ func GetWifiInfo() (WifiInfo, error) {
 		info.SSID = "Connected (Private)"
 	}
 
+	info.RSSIEstimated = false
+	info.NoiseAvailable = info.RSSI != 0
+
 	return info, nil
 }
 

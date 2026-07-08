@@ -32,9 +32,9 @@ var (
 
 // parseIndividualPings extracts latency from individual ping reply lines as a fallback.
 // Matches lines like: "64 bytes from 8.8.8.8: icmp_seq=0 ttl=117 time=12.345 ms"
-// Used by both Unix and Windows backends.
+// Also handles Windows "time=14ms" and French "temps=14 ms" reply lines.
 func parseIndividualPings(output string) float64 {
-	re := regexp.MustCompile(`time[=<]([\d.]+)\s*ms`)
+	re := regexp.MustCompile(`(?i)(?:time|temps)[=<]([\d.]+)\s*ms`)
 	matches := re.FindAllStringSubmatch(output, -1)
 	if len(matches) == 0 {
 		return 0

@@ -6,8 +6,7 @@
 //   - macOS: -W takes milliseconds
 //   - Linux: -W takes seconds
 //
-// We use build-tag helpers (ping_timeout_darwin.go / ping_timeout_linux.go)
-// to provide the correct timeout value.
+// pingTimeoutFlag() selects the correct -W value at runtime via GOOS.
 package collector
 
 import (

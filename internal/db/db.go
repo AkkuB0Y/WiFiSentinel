@@ -74,14 +74,26 @@ func (s *Store) migrate() error {
 	CREATE INDEX IF NOT EXISTS idx_speedtest_timestamp ON speed_test_samples(timestamp);
 	`
 	_, err := s.db.Exec(schema)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Additive migrations for existing databases.
+	for _, stmt := range []string{
+		`ALTER TABLE network_samples ADD COLUMN wifi_rssi_estimated INTEGER NOT NULL DEFAULT 0`,
+		`ALTER TABLE network_samples ADD COLUMN wifi_noise_available INTEGER NOT NULL DEFAULT 0`,
+	} {
+		_, _ = s.db.Exec(stmt)
+	}
+
+	return nil
 }
 
 // InsertSample writes a single network sample to the database.
 func (s *Store) InsertSample(sample NetworkSample) error {
 	query := `
-	INSERT INTO network_samples (timestamp, target, latency_ms, packet_loss, wifi_ssid, wifi_rssi, wifi_noise, wifi_channel)
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	INSERT INTO network_samples (timestamp, target, latency_ms, packet_loss, wifi_ssid, wifi_rssi, wifi_noise, wifi_channel, wifi_rssi_estimated, wifi_noise_available)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	_, err := s.db.Exec(query,
 		sample.Timestamp.UTC().Format(time.RFC3339),
@@ -92,6 +104,8 @@ func (s *Store) InsertSample(sample NetworkSample) error {
 		sample.WifiRSSI,
 		sample.WifiNoise,
 		sample.WifiChannel,
+		boolToInt(sample.WifiRssiEstimated),
+		boolToInt(sample.WifiNoiseAvailable),
 	)
 	return err
 }
@@ -100,7 +114,7 @@ func (s *Store) InsertSample(sample NetworkSample) error {
 // Returns nil if no samples exist.
 func (s *Store) GetLatestSample() (*NetworkSample, error) {
 	query := `
-	SELECT id, timestamp, target, latency_ms, packet_loss, wifi_ssid, wifi_rssi, wifi_noise, wifi_channel
+	SELECT id, timestamp, target, latency_ms, packet_loss, wifi_ssid, wifi_rssi, wifi_noise, wifi_channel, wifi_rssi_estimated, wifi_noise_available
 	FROM network_samples
 	ORDER BY timestamp DESC
 	LIMIT 1
@@ -120,7 +134,7 @@ func (s *Store) GetLatestSample() (*NetworkSample, error) {
 // Results are ordered newest-first.
 func (s *Store) GetSamples(since time.Time, limit int) ([]NetworkSample, error) {
 	query := `
-	SELECT id, timestamp, target, latency_ms, packet_loss, wifi_ssid, wifi_rssi, wifi_noise, wifi_channel
+	SELECT id, timestamp, target, latency_ms, packet_loss, wifi_ssid, wifi_rssi, wifi_noise, wifi_channel, wifi_rssi_estimated, wifi_noise_available
 	FROM network_samples
 	WHERE timestamp >= ?
 	ORDER BY timestamp DESC
@@ -136,15 +150,19 @@ func (s *Store) GetSamples(since time.Time, limit int) ([]NetworkSample, error) 
 	for rows.Next() {
 		var sample NetworkSample
 		var ts string
+		var rssiEstimated, noiseAvailable int
 		err := rows.Scan(
 			&sample.ID, &ts, &sample.Target,
 			&sample.LatencyMs, &sample.PacketLoss,
 			&sample.WifiSSID, &sample.WifiRSSI, &sample.WifiNoise, &sample.WifiChannel,
+			&rssiEstimated, &noiseAvailable,
 		)
 		if err != nil {
 			return nil, err
 		}
 		sample.Timestamp, _ = time.Parse(time.RFC3339, ts)
+		sample.WifiRssiEstimated = rssiEstimated != 0
+		sample.WifiNoiseAvailable = noiseAvailable != 0
 		samples = append(samples, sample)
 	}
 	return samples, rows.Err()
@@ -307,14 +325,25 @@ type scannable interface {
 func scanSample(row scannable) (*NetworkSample, error) {
 	var sample NetworkSample
 	var ts string
+	var rssiEstimated, noiseAvailable int
 	err := row.Scan(
 		&sample.ID, &ts, &sample.Target,
 		&sample.LatencyMs, &sample.PacketLoss,
 		&sample.WifiSSID, &sample.WifiRSSI, &sample.WifiNoise, &sample.WifiChannel,
+		&rssiEstimated, &noiseAvailable,
 	)
 	if err != nil {
 		return nil, err
 	}
 	sample.Timestamp, _ = time.Parse(time.RFC3339, ts)
+	sample.WifiRssiEstimated = rssiEstimated != 0
+	sample.WifiNoiseAvailable = noiseAvailable != 0
 	return &sample, nil
+}
+
+func boolToInt(v bool) int {
+	if v {
+		return 1
+	}
+	return 0
 }

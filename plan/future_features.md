@@ -5,7 +5,7 @@ This document outlines the roadmap for future features and improvements to WiFi 
 ## 1. Huge Features to Make it Stand Out 🚀
 These are the "killer features" that would elevate this from a personal utility to a widely adopted tool:
 
-*   **Multi-Platform WiFi Support:** Currently, the project uses macOS `airport`. Abstract the WiFi collection into a cross-platform layer using `netsh wlan show interfaces` for Windows and `iwconfig` or `nmcli` for Linux.
+*   ~~**Multi-Platform WiFi Support:**~~ **Done** — macOS (`wifi-helper`/CoreWLAN), Windows (`netsh`), Linux (`nmcli` / `iwconfig`).
 *   **Automated Speed Tests:** Add a feature to run automated download/upload speed tests on a set schedule (e.g., every 6 hours) and plot bandwidth degradation over time.
 *   **Alerting & Notification Engine:** Integrate webhook support so users can easily plug in Discord, Slack, Telegram, or even simple email alerts when the network degrades or drops completely.
 *   **Multi-Node / Distributed Monitoring:** Allow users to run lightweight "agent" binaries on their Raspberry Pi, desktop, and laptop, all reporting back to a central Sentinel instance to map out WiFi dead zones.

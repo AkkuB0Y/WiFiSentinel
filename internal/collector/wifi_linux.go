@@ -53,20 +53,53 @@ func GetWifiInfo() (WifiInfo, error) {
 	}
 }
 
-// getWifiInfoNmcli uses NetworkManager's nmcli to get WiFi details.
-// It queries the active WiFi connection's properties.
+// getWifiInfoNmcli uses NetworkManager's nmcli to get WiFi details
+// for the currently connected WiFi device.
 func getWifiInfoNmcli() (WifiInfo, error) {
-	// Get the active WiFi device details
-	cmd := exec.Command("nmcli", "-t", "-f",
-		"GENERAL.CONNECTION,WIFI.SSID,WIFI.SIGNAL,WIFI.CHAN,WIFI.FREQ",
-		"device", "show")
-	output, err := cmd.Output()
-	if err != nil {
-		// Fallback: try getting info from the wifi list for the connected AP
+	device := findConnectedWifiDevice()
+	if device == "" {
 		return getWifiInfoNmcliWifiList()
 	}
 
-	return parseNmcliDeviceOutput(string(output)), nil
+	cmd := exec.Command("nmcli", "-t", "-f",
+		"WIFI.SSID,WIFI.SIGNAL,WIFI.CHAN,WIFI.FREQ",
+		"device", "show", device)
+	output, err := cmd.Output()
+	if err != nil {
+		return getWifiInfoNmcliWifiList()
+	}
+
+	info := parseNmcliDeviceOutput(string(output))
+	info.RSSIEstimated = true
+	info.NoiseAvailable = false
+	return info, nil
+}
+
+// findConnectedWifiDevice returns the name of the first connected WiFi interface.
+func findConnectedWifiDevice() string {
+	cmd := exec.Command("nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device")
+	output, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+
+	for _, line := range strings.Split(string(output), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		parts := strings.SplitN(line, ":", 3)
+		if len(parts) < 3 {
+			continue
+		}
+		device := strings.TrimSpace(parts[0])
+		typ := strings.TrimSpace(parts[1])
+		state := strings.TrimSpace(parts[2])
+		if typ == "wifi" && strings.Contains(state, "connected") {
+			return device
+		}
+	}
+	return ""
 }
 
 // getWifiInfoNmcliWifiList uses `nmcli device wifi list` as a secondary approach.
@@ -77,7 +110,10 @@ func getWifiInfoNmcliWifiList() (WifiInfo, error) {
 		return WifiInfo{}, nil
 	}
 
-	return parseNmcliWifiListOutput(string(output)), nil
+	info := parseNmcliWifiListOutput(string(output))
+	info.RSSIEstimated = true
+	info.NoiseAvailable = false
+	return info, nil
 }
 
 // parseNmcliDeviceOutput parses `nmcli -t -f ... device show` output.
@@ -114,8 +150,7 @@ func parseNmcliDeviceOutput(output string) WifiInfo {
 		case "WIFI.SIGNAL":
 			if v, err := strconv.Atoi(value); err == nil {
 				// nmcli reports signal as 0-100 quality percentage.
-				// Convert to approximate dBm: dBm ≈ (quality / 2) - 100
-				info.RSSI = (v / 2) - 100
+				info.RSSI = qualityPctToDbm(v)
 			}
 		case "WIFI.CHAN":
 			if v, err := strconv.Atoi(value); err == nil {
@@ -169,7 +204,7 @@ func parseNmcliWifiListOutput(output string) WifiInfo {
 		info.SSID = strings.Join(ssidParts, ":")
 
 		if v, err := strconv.Atoi(parts[signalIdx]); err == nil {
-			info.RSSI = (v / 2) - 100
+			info.RSSI = qualityPctToDbm(v)
 		}
 		if v, err := strconv.Atoi(parts[chanIdx]); err == nil {
 			info.Channel = v
@@ -198,7 +233,13 @@ func getWifiInfoIwconfig() (WifiInfo, error) {
 		}
 	}
 
-	return parseIwconfigOutput(string(output)), nil
+	return finalizeIwconfigInfo(parseIwconfigOutput(string(output))), nil
+}
+
+func finalizeIwconfigInfo(info WifiInfo) WifiInfo {
+	info.RSSIEstimated = false
+	info.NoiseAvailable = info.RSSI != 0 || info.Noise != 0
+	return info
 }
 
 // parseIwconfigOutput parses iwconfig output for WiFi details.

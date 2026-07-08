@@ -51,84 +51,107 @@ func GetWifiInfo() (WifiInfo, error) {
 	}
 
 	info := parseNetshOutput(string(output))
-
+	info.RSSIEstimated = true
+	info.NoiseAvailable = false
 	return info, nil
 }
 
 // parseNetshOutput parses the output of `netsh wlan show interfaces`.
-//
-// Example output:
-//
-//	There is 1 interface on the system:
-//
-//	    Name                   : Wi-Fi
-//	    Description            : Intel(R) Wi-Fi 6 AX201
-//	    GUID                   : {12345678-...}
-//	    Physical address       : aa:bb:cc:dd:ee:ff
-//	    State                  : connected
-//	    SSID                   : MyNetwork
-//	    BSSID                  : aa:bb:cc:dd:ee:ff
-//	    Network type           : Infrastructure
-//	    Radio type             : 802.11ax
-//	    Authentication         : WPA2-Personal
-//	    Cipher                 : CCMP
-//	    Connection mode        : Profile
-//	    Channel                : 36
-//	    Receive rate (Mbps)    : 1201
-//	    Transmit rate (Mbps)   : 1201
-//	    Signal                 : 85%
-//	    Profile                : MyNetwork
+// When multiple interfaces are present, returns the connected interface
+// with the strongest signal.
 func parseNetshOutput(output string) WifiInfo {
-	info := WifiInfo{}
+	var best WifiInfo
+	bestSignalPct := -1
+
+	for _, block := range splitNetshInterfaceBlocks(output) {
+		info, signalPct, connected := parseNetshInterfaceBlock(block)
+		if !connected {
+			continue
+		}
+		if signalPct > bestSignalPct || (signalPct == bestSignalPct && info.SSID != "" && best.SSID == "") {
+			best = info
+			bestSignalPct = signalPct
+		}
+	}
+
+	return best
+}
+
+// splitNetshInterfaceBlocks splits netsh output into per-interface blocks.
+func splitNetshInterfaceBlocks(output string) []string {
+	var blocks []string
+	var current strings.Builder
 
 	for _, line := range strings.Split(output, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if isNetshInterfaceHeader(trimmed) && current.Len() > 0 {
+			blocks = append(blocks, current.String())
+			current.Reset()
+		}
+		if trimmed != "" {
+			current.WriteString(line)
+			current.WriteByte('\n')
+		}
+	}
+
+	if current.Len() > 0 {
+		blocks = append(blocks, current.String())
+	}
+	return blocks
+}
+
+func isNetshInterfaceHeader(line string) bool {
+	key, _, ok := strings.Cut(line, ":")
+	if !ok {
+		return false
+	}
+	return strings.EqualFold(strings.TrimSpace(key), "Name")
+}
+
+// parseNetshInterfaceBlock parses one netsh interface block.
+// Returns the parsed info, raw signal percentage, and whether the interface is connected.
+func parseNetshInterfaceBlock(block string) (WifiInfo, int, bool) {
+	info := WifiInfo{}
+	signalPct := 0
+	connected := false
+
+	for _, line := range strings.Split(block, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
 
-		// Each line is "Key : Value" format
 		parts := strings.SplitN(line, ":", 2)
 		if len(parts) != 2 {
 			continue
 		}
 
-		// Trim and normalize the key (handle leading whitespace in key)
 		key := strings.TrimSpace(parts[0])
 		value := strings.TrimSpace(parts[1])
-
-		// Use case-insensitive matching for robustness across locales
 		keyLower := strings.ToLower(key)
 
 		switch {
 		case keyLower == "ssid" && info.SSID == "":
-			// Only take the first SSID (skip BSSID which comes later)
 			info.SSID = value
 
+		case keyLower == "state":
+			connected = strings.Contains(strings.ToLower(value), "connected") &&
+				!strings.Contains(strings.ToLower(value), "disconnected")
+
 		case keyLower == "signal":
-			// Signal is reported as percentage (e.g., "85%")
 			pctStr := strings.TrimSuffix(value, "%")
 			pctStr = strings.TrimSpace(pctStr)
 			if pct, err := strconv.Atoi(pctStr); err == nil {
-				// Convert percentage to approximate dBm:
-				// Microsoft uses a non-linear mapping, but linear approx is:
-				// dBm ≈ (quality / 2) - 100
-				info.RSSI = (pct / 2) - 100
+				signalPct = pct
+				info.RSSI = qualityPctToDbm(pct)
 			}
 
 		case keyLower == "channel":
 			if v, err := strconv.Atoi(value); err == nil {
 				info.Channel = v
 			}
-
-		case keyLower == "radio type":
-			// Log radio type for informational purposes
-			log.Printf("[wifi] radio type: %s", value)
 		}
 	}
 
-	// Noise is not available via netsh on Windows
-	// info.Noise remains 0
-
-	return info
+	return info, signalPct, connected
 }
