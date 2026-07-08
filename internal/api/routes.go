@@ -5,6 +5,7 @@ package api
 import (
 	"net/http"
 
+	"wifimonitor/internal/alerts"
 	"wifimonitor/internal/cloud"
 	"wifimonitor/internal/collector"
 	"wifimonitor/internal/config"
@@ -12,8 +13,8 @@ import (
 )
 
 // RegisterRoutes sets up all API endpoint routes on the given ServeMux.
-func RegisterRoutes(mux *http.ServeMux, store *db.Store, cfg *config.Config, st *collector.SpeedTester, sm *cloud.SessionManager, fc *cloud.FirebaseClient) {
-	h := NewHandlers(store, cfg, st, sm, fc)
+func RegisterRoutes(mux *http.ServeMux, store *db.Store, cfg *config.Config, st *collector.SpeedTester, sm *cloud.SessionManager, fc *cloud.FirebaseClient, ae *alerts.AlertEngine) {
+	h := NewHandlers(store, cfg, st, sm, fc, ae)
 
 	mux.HandleFunc("/api/status", h.HandleGetStatus)
 	mux.HandleFunc("/api/history", h.HandleGetHistory)
@@ -34,5 +35,10 @@ func RegisterRoutes(mux *http.ServeMux, store *db.Store, cfg *config.Config, st 
 	mux.HandleFunc("/api/session/delete", h.HandleSessionDelete)
 	mux.HandleFunc("/api/session/data", h.HandleGetSessionData)
 	mux.HandleFunc("/api/session/active", h.HandleGetActiveSession)
+
+	// Webhook / alerting endpoints
+	mux.HandleFunc("/api/webhooks", h.HandleWebhooks)
+	mux.HandleFunc("/api/webhooks/test", h.HandleTestWebhook)
+	mux.HandleFunc("/api/alerts/history", h.HandleGetAlertHistory)
 }
 

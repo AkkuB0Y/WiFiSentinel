@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"wifimonitor/internal/alerts"
 	"wifimonitor/internal/cloud"
 	"wifimonitor/internal/collector"
 	"wifimonitor/internal/config"
@@ -16,11 +17,11 @@ import (
 
 // NewServer creates and configures an HTTP server with all routes and middleware.
 // It serves both the API endpoints and the embedded static frontend.
-func NewServer(cfg *config.Config, store *db.Store, staticFS http.FileSystem, st *collector.SpeedTester, sm *cloud.SessionManager, fc *cloud.FirebaseClient) *http.Server {
+func NewServer(cfg *config.Config, store *db.Store, staticFS http.FileSystem, st *collector.SpeedTester, sm *cloud.SessionManager, fc *cloud.FirebaseClient, ae *alerts.AlertEngine) *http.Server {
 	mux := http.NewServeMux()
 
 	// Register API routes
-	RegisterRoutes(mux, store, cfg, st, sm, fc)
+	RegisterRoutes(mux, store, cfg, st, sm, fc, ae)
 
 	// Serve embedded static frontend
 	if staticFS != nil {

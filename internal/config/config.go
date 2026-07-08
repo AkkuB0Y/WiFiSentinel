@@ -39,6 +39,14 @@ type Config struct {
 
 	// FirebaseAPIKey is the Firebase Web API key for authentication.
 	FirebaseAPIKey string
+
+	// AlertsEnabled enables the alerting engine (default: true).
+	// When true, the engine evaluates samples against webhook thresholds,
+	// but no alerts fire until at least one webhook is configured via the API.
+	AlertsEnabled bool
+
+	// AlertCooldown is the minimum time between repeated alerts for the same condition.
+	AlertCooldown time.Duration
 }
 
 // LoadConfig reads configuration from environment variables, falling back
@@ -58,6 +66,8 @@ func LoadConfig() *Config {
 		DBPath:            "./sentinel.db",
 		HTTPPort:          8080,
 		RetentionDays:     7,
+		AlertsEnabled:     true,
+		AlertCooldown:     5 * time.Minute,
 	}
 
 	if targets := os.Getenv("SENTINEL_PING_TARGETS"); targets != "" {
@@ -112,6 +122,17 @@ func LoadConfig() *Config {
 
 	if apiKey := os.Getenv("SENTINEL_FIREBASE_API_KEY"); apiKey != "" {
 		cfg.FirebaseAPIKey = apiKey
+	}
+
+	// Alerts settings
+	if alertsEnabled := os.Getenv("SENTINEL_ALERTS_ENABLED"); alertsEnabled != "" {
+		cfg.AlertsEnabled = alertsEnabled == "true" || alertsEnabled == "1"
+	}
+
+	if alertCooldown := os.Getenv("SENTINEL_ALERT_COOLDOWN"); alertCooldown != "" {
+		if d, err := time.ParseDuration(alertCooldown); err == nil && d > 0 {
+			cfg.AlertCooldown = d
+		}
 	}
 
 	return cfg

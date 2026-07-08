@@ -175,6 +175,52 @@ const SentinelAPI = (() => {
         return request('/api/cloud/sessions');
     }
 
+
+    // --- Webhooks API ---
+
+    async function getWebhooks() {
+        const res = await request('/api/webhooks');
+        return res.webhooks || [];
+    }
+
+    async function createWebhook(data) {
+        const response = await fetch('/api/webhooks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+    }
+
+    async function updateWebhook(id, data) {
+        const response = await fetch(`/api/webhooks?id=${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+    }
+
+    async function deleteWebhook(id) {
+        const response = await fetch(`/api/webhooks?id=${id}`, {
+            method: 'DELETE',
+        });
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+    }
+
+    async function testWebhook(id) {
+        return postRequest('/api/webhooks/test', { webhook_id: id });
+    }
+
     return {
         fetchStatus,
         fetchHistory,
@@ -190,7 +236,13 @@ const SentinelAPI = (() => {
         deleteSession,
         getSessionData,
         getActiveSession,
+
         getCloudSessions,
+        getWebhooks,
+        createWebhook,
+        updateWebhook,
+        deleteWebhook,
+        testWebhook,
     };
 })();
 

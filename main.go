@@ -19,6 +19,8 @@
 //	SENTINEL_CLOUD_ENABLED   Enable Firebase cloud sync (default: false)
 //	SENTINEL_FIREBASE_PROJECT Firebase project ID
 //	SENTINEL_FIREBASE_API_KEY Firebase Web API key
+//	SENTINEL_ALERTS_ENABLED  Enable alerting engine (default: true)
+//	SENTINEL_ALERT_COOLDOWN  Min time between repeated alerts (default: "5m")
 package main
 
 import (
@@ -31,6 +33,7 @@ import (
 	"syscall"
 	"time"
 
+	"wifimonitor/internal/alerts"
 	"wifimonitor/internal/api"
 	"wifimonitor/internal/cloud"
 	"wifimonitor/internal/collector"
@@ -92,6 +95,15 @@ func main() {
 		log.Println("[cloud] cloud mode disabled — local-only operation")
 	}
 
+	// --- Alerts / Webhook Setup ---
+	var alertEngine *alerts.AlertEngine
+	if cfg.AlertsEnabled {
+		alertEngine = alerts.NewAlertEngine(store, cfg.AlertCooldown)
+		log.Printf("[alerts] alert engine enabled — cooldown: %s", cfg.AlertCooldown)
+	} else {
+		log.Println("[alerts] alert engine disabled")
+	}
+
 	// Create speed tester with DB storage callback
 	speedTester := collector.NewSpeedTester(func(result collector.SpeedTestResult) {
 		if result.Err != nil {
@@ -124,14 +136,14 @@ func main() {
 	})
 
 	// Create HTTP server
-	server := api.NewServer(cfg, store, staticFS, speedTester, sessionMgr, firebaseClient)
+	server := api.NewServer(cfg, store, staticFS, speedTester, sessionMgr, firebaseClient, alertEngine)
 
 	// Create context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// Start collector in background goroutine
-	coll := collector.NewCollector(cfg, store, sampleBuffer, sessionMgr)
+	coll := collector.NewCollector(cfg, store, sampleBuffer, sessionMgr, alertEngine)
 	go coll.Start(ctx)
 
 	// Start automatic speed test scheduler if interval > 0

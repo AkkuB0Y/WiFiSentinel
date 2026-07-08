@@ -45,3 +45,34 @@ type SpeedTestSample struct {
 	ServerID     string    `json:"server_id"`
 }
 
+// WebhookConfig represents a user-configured webhook for alert notifications.
+// Threshold fields use pointers so that nil = "disabled" vs 0 = "alert at zero".
+type WebhookConfig struct {
+	ID                  int64    `json:"id"`
+	Name                string   `json:"name"`
+	URL                 string   `json:"url"`
+	Platform            string   `json:"platform"`             // discord, slack, telegram, generic
+	Enabled             bool     `json:"enabled"`
+	LatencyThreshold    *float64 `json:"latency_threshold"`    // ms, nil = disabled
+	PacketLossThreshold *float64 `json:"packet_loss_threshold"` // %, nil = disabled
+	SignalThreshold     *int     `json:"signal_threshold"`     // dBm, nil = disabled
+	ConnectionLost      bool     `json:"connection_lost"`      // alert on 100% loss
+	CooldownMinutes     int      `json:"cooldown_minutes"`
+	NotifyRecovery      bool     `json:"notify_recovery"`
+	CreatedAt           time.Time `json:"created_at"`
+	UpdatedAt           time.Time `json:"updated_at"`
+}
+
+// AlertHistoryEntry records a single alert that was fired.
+type AlertHistoryEntry struct {
+	ID        int64     `json:"id"`
+	WebhookID int64     `json:"webhook_id"`
+	Condition string    `json:"condition"`
+	Severity  string    `json:"severity"`
+	Message   string    `json:"message"`
+	Value     float64   `json:"value"`
+	Threshold float64   `json:"threshold"`
+	FiredAt   time.Time `json:"fired_at"`
+	Delivered bool      `json:"delivered"`
+}
+
