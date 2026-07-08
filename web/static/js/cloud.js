@@ -856,10 +856,14 @@ const SentinelCloud = (() => {
         chartsEl.style.display = 'none';
         if (summaryEl) summaryEl.style.display = 'none';
         modal.style.display = 'flex';
+        // The .modal-overlay class defaults to opacity:0/pointer-events:none and only
+        // becomes visible/interactive via the .active class. Setting display alone leaves
+        // the modal laid out but fully transparent.
+        modal.classList.add('active');
 
         try {
             const data = await SentinelAPI.getSessionData(sessionId);
-            
+
             if (data && data.buckets && data.buckets.length > 0) {
                 // Show summary stats
                 if (summaryEl && data.summary) {
@@ -867,7 +871,15 @@ const SentinelCloud = (() => {
                     summaryEl.style.display = 'grid';
                 }
 
-                // Initialize charts if not already done
+                // Reveal the charts container BEFORE building the charts. Chart.js measures
+                // the canvas size at creation time; if the container is still display:none the
+                // canvas is sized 0x0 and renders blank even after it later becomes visible.
+                loadingEl.style.display = 'none';
+                chartsEl.style.display = 'block';
+
+                // Always reset chart instances before reusing the viewer canvases.
+                // Without this, reopening sessions can trip Chart.js "Canvas is already in use".
+                SentinelCharts.destroy();
                 SentinelCharts.init();
                 SentinelCharts.updateCharts(data.buckets);
 
@@ -876,10 +888,10 @@ const SentinelCloud = (() => {
                     SentinelCharts.updateSpeedTestChart(data.speed_tests);
                     const stContainer = document.getElementById('viewer-speedtest-section');
                     if (stContainer) stContainer.style.display = 'block';
+                } else {
+                    const stContainer = document.getElementById('viewer-speedtest-section');
+                    if (stContainer) stContainer.style.display = 'none';
                 }
-
-                loadingEl.style.display = 'none';
-                chartsEl.style.display = 'block';
             } else {
                 loadingEl.innerHTML = `
                     <div class="viewer-empty-state">
@@ -957,6 +969,7 @@ const SentinelCloud = (() => {
 
     function closeSessionViewer() {
         const modal = document.getElementById('session-viewer-modal');
+        modal.classList.remove('active');
         modal.style.display = 'none';
         stopLiveMetricsPolling();
         SentinelCharts.destroy();

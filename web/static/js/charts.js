@@ -22,6 +22,14 @@ const SentinelCharts = (() => {
     let lossChart = null;
     let speedtestChart = null;
 
+    function destroyChartByCanvasId(canvasId) {
+        if (!Chart.getChart) return;
+        const existing = Chart.getChart(canvasId);
+        if (existing) {
+            existing.destroy();
+        }
+    }
+
     /**
      * Shared axis configuration for all time-series charts.
      */
@@ -91,6 +99,7 @@ const SentinelCharts = (() => {
      * Create the latency time-series chart.
      */
     function createLatencyChart(canvasId) {
+        destroyChartByCanvasId(canvasId);
         const ctx = document.getElementById(canvasId).getContext('2d');
         
         // Create gradient fill
@@ -149,6 +158,7 @@ const SentinelCharts = (() => {
      * Create the WiFi signal strength chart.
      */
     function createSignalChart(canvasId) {
+        destroyChartByCanvasId(canvasId);
         const ctx = document.getElementById(canvasId).getContext('2d');
 
         const gradient = ctx.createLinearGradient(0, 0, 0, 220);
@@ -195,6 +205,7 @@ const SentinelCharts = (() => {
      * Create the packet loss bar chart.
      */
     function createPacketLossChart(canvasId) {
+        destroyChartByCanvasId(canvasId);
         const ctx = document.getElementById(canvasId).getContext('2d');
 
         lossChart = new Chart(ctx, {
@@ -300,6 +311,7 @@ const SentinelCharts = (() => {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return null;
 
+        destroyChartByCanvasId(canvasId);
         const ctx = canvas.getContext('2d');
 
         const dlGradient = ctx.createLinearGradient(0, 0, 0, 200);
@@ -409,6 +421,8 @@ const SentinelCharts = (() => {
      * Initialize all charts.
      */
     function init() {
+        // Defensive cleanup: ensures repeated inits can never reuse a busy canvas.
+        destroy();
         createLatencyChart('chart-latency');
         createSignalChart('chart-signal');
         createPacketLossChart('chart-loss');
@@ -419,6 +433,10 @@ const SentinelCharts = (() => {
      * Destroy all charts (for cleanup).
      */
     function destroy() {
+        destroyChartByCanvasId('chart-latency');
+        destroyChartByCanvasId('chart-signal');
+        destroyChartByCanvasId('chart-loss');
+        destroyChartByCanvasId('chart-speedtest');
         if (latencyChart) { latencyChart.destroy(); latencyChart = null; }
         if (signalChart) { signalChart.destroy(); signalChart = null; }
         if (lossChart) { lossChart.destroy(); lossChart = null; }
