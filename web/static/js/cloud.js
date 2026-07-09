@@ -420,21 +420,21 @@ const SentinelCloud = (() => {
                     <p class="cloud-info-desc">WiFi Sentinel Cloud allows you to stream and store your network health metrics securely to Google Firestore.</p>
                     <ul class="cloud-benefits-list">
                         <li>
-                            <span class="benefit-icon">☁️</span>
+                            <span class="benefit-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></span>
                             <div class="benefit-desc">
                                 <strong>Real-Time Syncing</strong>
                                 <span>Streams latency and speed tests directly to your cloud project.</span>
                             </div>
                         </li>
                         <li>
-                            <span class="benefit-icon">📊</span>
+                            <span class="benefit-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
                             <div class="benefit-desc">
                                 <strong>Multi-Device Dashboard</strong>
                                 <span>Track network tests from multiple hosts simultaneously in one database.</span>
                             </div>
                         </li>
                         <li>
-                            <span class="benefit-icon">💾</span>
+                            <span class="benefit-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span>
                             <div class="benefit-desc">
                                 <strong>Offline Auto-Buffer</strong>
                                 <span>No local data loss during outages. Automatically flushes once connection resumes.</span>
@@ -509,42 +509,42 @@ const SentinelCloud = (() => {
                         </h3>
                         <div class="tracking-metrics-grid">
                             <div class="tracking-metric-card">
-                                <div class="tracking-metric-icon" style="color: #38bdf8;">⚡</div>
+                                <div class="tracking-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
                                 <div class="tracking-metric-info">
                                     <span class="tracking-metric-name">Network Latency</span>
                                     <span class="tracking-metric-desc">Ping RTT to targets (ms)</span>
                                 </div>
                             </div>
                             <div class="tracking-metric-card">
-                                <div class="tracking-metric-icon" style="color: #f59e0b;">💧</div>
+                                <div class="tracking-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
                                 <div class="tracking-metric-info">
                                     <span class="tracking-metric-name">Packet Loss</span>
                                     <span class="tracking-metric-desc">% failed pings per interval</span>
                                 </div>
                             </div>
                             <div class="tracking-metric-card">
-                                <div class="tracking-metric-icon" style="color: #22c55e;">📶</div>
+                                <div class="tracking-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></div>
                                 <div class="tracking-metric-info">
                                     <span class="tracking-metric-name">WiFi Signal (RSSI)</span>
                                     <span class="tracking-metric-desc">Signal strength in dBm</span>
                                 </div>
                             </div>
                             <div class="tracking-metric-card">
-                                <div class="tracking-metric-icon" style="color: #a78bfa;">📡</div>
+                                <div class="tracking-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M7.76 16.24a6 6 0 0 1 0-8.49"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 19.07a10 10 0 0 1 0-14.14"/></svg></div>
                                 <div class="tracking-metric-info">
                                     <span class="tracking-metric-name">WiFi Noise & Channel</span>
                                     <span class="tracking-metric-desc">Noise floor (dBm) + channel</span>
                                 </div>
                             </div>
                             <div class="tracking-metric-card">
-                                <div class="tracking-metric-icon" style="color: #f472b6;">🌐</div>
+                                <div class="tracking-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
                                 <div class="tracking-metric-info">
                                     <span class="tracking-metric-name">Network SSID</span>
                                     <span class="tracking-metric-desc">Connected network name</span>
                                 </div>
                             </div>
                             <div class="tracking-metric-card">
-                                <div class="tracking-metric-icon" style="color: #34d399;">🚀</div>
+                                <div class="tracking-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="m19.07 4.93-2.83 2.83"/><path d="M20 12h-4"/><path d="m19.07 19.07-2.83-2.83"/><path d="M12 20v-4"/><path d="m4.93 19.07 2.83-2.83"/><path d="M4 12h4"/><path d="m4.93 4.93 2.83 2.83"/><circle cx="12" cy="12" r="3"/></svg></div>
                                 <div class="tracking-metric-info">
                                     <span class="tracking-metric-name">Speed Tests</span>
                                     <span class="tracking-metric-desc">DL/UL Mbps, jitter, latency</span>
@@ -734,7 +734,7 @@ const SentinelCloud = (() => {
             if (completedSessions.length === 0) {
                 listContainer.innerHTML = `
                     <div class="cloud-sessions-empty">
-                        <span class="empty-icon">📂</span>
+                        <span class="empty-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h5l2 2h11v10a2 2 0 0 1-2 2H3z"/><path d="M3 6a2 2 0 0 1 2-2h4l2 2"/></svg></span>
                         <span class="empty-text">No completed sessions found.</span>
                     </div>
                 `;
@@ -778,10 +778,12 @@ const SentinelCloud = (() => {
                         <div class="cloud-session-info-right">
                             <span class="session-item-duration">${durationStr}</span>
                             <span class="session-item-badge session-view-badge" title="View Session">
-                                📊 View
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                                View
                             </span>
                             <span class="session-item-badge session-delete-badge" title="Delete Session" onclick="SentinelCloud.handleDeleteSession(event, '${session.id}')">
-                                🗑️ Delete
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                                Delete
                             </span>
                         </div>
                     </div>
@@ -792,7 +794,7 @@ const SentinelCloud = (() => {
             console.error('[cloud] error fetching previous sessions:', err);
             listContainer.innerHTML = `
                 <div class="cloud-sessions-error">
-                    <span class="error-icon">⚠️</span>
+                    <span class="error-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
                     <span class="error-text">Failed to load previous sessions. Check Firestore Rules.</span>
                 </div>
             `;
@@ -854,10 +856,14 @@ const SentinelCloud = (() => {
         chartsEl.style.display = 'none';
         if (summaryEl) summaryEl.style.display = 'none';
         modal.style.display = 'flex';
+        // The .modal-overlay class defaults to opacity:0/pointer-events:none and only
+        // becomes visible/interactive via the .active class. Setting display alone leaves
+        // the modal laid out but fully transparent.
+        modal.classList.add('active');
 
         try {
             const data = await SentinelAPI.getSessionData(sessionId);
-            
+
             if (data && data.buckets && data.buckets.length > 0) {
                 // Show summary stats
                 if (summaryEl && data.summary) {
@@ -865,7 +871,15 @@ const SentinelCloud = (() => {
                     summaryEl.style.display = 'grid';
                 }
 
-                // Initialize charts if not already done
+                // Reveal the charts container BEFORE building the charts. Chart.js measures
+                // the canvas size at creation time; if the container is still display:none the
+                // canvas is sized 0x0 and renders blank even after it later becomes visible.
+                loadingEl.style.display = 'none';
+                chartsEl.style.display = 'block';
+
+                // Always reset chart instances before reusing the viewer canvases.
+                // Without this, reopening sessions can trip Chart.js "Canvas is already in use".
+                SentinelCharts.destroy();
                 SentinelCharts.init();
                 SentinelCharts.updateCharts(data.buckets);
 
@@ -874,14 +888,14 @@ const SentinelCloud = (() => {
                     SentinelCharts.updateSpeedTestChart(data.speed_tests);
                     const stContainer = document.getElementById('viewer-speedtest-section');
                     if (stContainer) stContainer.style.display = 'block';
+                } else {
+                    const stContainer = document.getElementById('viewer-speedtest-section');
+                    if (stContainer) stContainer.style.display = 'none';
                 }
-
-                loadingEl.style.display = 'none';
-                chartsEl.style.display = 'block';
             } else {
                 loadingEl.innerHTML = `
                     <div class="viewer-empty-state">
-                        <span style="font-size: 2rem;">📭</span>
+                        <span style="font-size: 2rem;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5 5h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg></span>
                         <h3>No Data Recorded</h3>
                         <p>This session has no network samples. The session may have been too short to capture data, or the data may have failed to sync to Firestore.</p>
                     </div>
@@ -891,7 +905,7 @@ const SentinelCloud = (() => {
             console.error('[cloud] error loading session data:', err);
             loadingEl.innerHTML = `
                 <div class="viewer-empty-state error">
-                    <span style="font-size: 2rem;">⚠️</span>
+                    <span style="font-size: 2rem;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
                     <h3>Failed to Load Data</h3>
                     <p>${err.message || 'An error occurred while fetching session data from Firestore. Check your authentication and try again.'}</p>
                 </div>
@@ -909,42 +923,42 @@ const SentinelCloud = (() => {
 
         container.innerHTML = `
             <div class="summary-stat-card">
-                <span class="summary-stat-icon" style="color: #38bdf8;">⚡</span>
+                <span class="summary-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
                 <div class="summary-stat-data">
                     <span class="summary-stat-value">${avgLat}<span class="summary-stat-unit">ms</span></span>
                     <span class="summary-stat-label">Avg Latency</span>
                 </div>
             </div>
             <div class="summary-stat-card">
-                <span class="summary-stat-icon" style="color: #ef4444;">📈</span>
+                <span class="summary-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
                 <div class="summary-stat-data">
                     <span class="summary-stat-value">${maxLat}<span class="summary-stat-unit">ms</span></span>
                     <span class="summary-stat-label">Max Latency</span>
                 </div>
             </div>
             <div class="summary-stat-card">
-                <span class="summary-stat-icon" style="color: #22c55e;">📶</span>
+                <span class="summary-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></span>
                 <div class="summary-stat-data">
                     <span class="summary-stat-value">${avgSig}<span class="summary-stat-unit">dBm</span></span>
                     <span class="summary-stat-label">Avg Signal</span>
                 </div>
             </div>
             <div class="summary-stat-card">
-                <span class="summary-stat-icon" style="color: #f59e0b;">💧</span>
+                <span class="summary-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></span>
                 <div class="summary-stat-data">
                     <span class="summary-stat-value">${avgLoss}<span class="summary-stat-unit">%</span></span>
                     <span class="summary-stat-label">Avg Loss</span>
                 </div>
             </div>
             <div class="summary-stat-card">
-                <span class="summary-stat-icon" style="color: #a78bfa;">📊</span>
+                <span class="summary-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
                 <div class="summary-stat-data">
                     <span class="summary-stat-value">${samples}</span>
                     <span class="summary-stat-label">Samples</span>
                 </div>
             </div>
             <div class="summary-stat-card">
-                <span class="summary-stat-icon" style="color: #34d399;">🚀</span>
+                <span class="summary-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="m19.07 4.93-2.83 2.83"/><path d="M20 12h-4"/><path d="m19.07 19.07-2.83-2.83"/><path d="M12 20v-4"/><path d="m4.93 19.07 2.83-2.83"/><path d="M4 12h4"/><path d="m4.93 4.93 2.83 2.83"/><circle cx="12" cy="12" r="3"/></svg></span>
                 <div class="summary-stat-data">
                     <span class="summary-stat-value">${speedTests}</span>
                     <span class="summary-stat-label">Speed Tests</span>
@@ -955,6 +969,7 @@ const SentinelCloud = (() => {
 
     function closeSessionViewer() {
         const modal = document.getElementById('session-viewer-modal');
+        modal.classList.remove('active');
         modal.style.display = 'none';
         stopLiveMetricsPolling();
         SentinelCharts.destroy();

@@ -6,7 +6,7 @@
 const SentinelCharts = (() => {
     // Chart.js global defaults for our dark theme
     Chart.defaults.color = '#94a3b8';
-    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.font.family = "'General Sans', sans-serif";
     Chart.defaults.font.size = 11;
     Chart.defaults.plugins.legend.display = false;
     Chart.defaults.responsive = true;
@@ -21,6 +21,14 @@ const SentinelCharts = (() => {
     let signalChart = null;
     let lossChart = null;
     let speedtestChart = null;
+
+    function destroyChartByCanvasId(canvasId) {
+        if (!Chart.getChart) return;
+        const existing = Chart.getChart(canvasId);
+        if (existing) {
+            existing.destroy();
+        }
+    }
 
     /**
      * Shared axis configuration for all time-series charts.
@@ -71,7 +79,7 @@ const SentinelCharts = (() => {
 
     function tooltipConfig() {
         return {
-            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            backgroundColor: 'rgba(10, 10, 10, 0.95)',
             titleColor: '#f1f5f9',
             bodyColor: '#94a3b8',
             borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -91,6 +99,7 @@ const SentinelCharts = (() => {
      * Create the latency time-series chart.
      */
     function createLatencyChart(canvasId) {
+        destroyChartByCanvasId(canvasId);
         const ctx = document.getElementById(canvasId).getContext('2d');
         
         // Create gradient fill
@@ -149,11 +158,12 @@ const SentinelCharts = (() => {
      * Create the WiFi signal strength chart.
      */
     function createSignalChart(canvasId) {
+        destroyChartByCanvasId(canvasId);
         const ctx = document.getElementById(canvasId).getContext('2d');
 
         const gradient = ctx.createLinearGradient(0, 0, 0, 220);
-        gradient.addColorStop(0, 'rgba(34, 197, 94, 0.2)');
-        gradient.addColorStop(1, 'rgba(34, 197, 94, 0)');
+        gradient.addColorStop(0, 'rgba(56, 189, 248, 0.2)');
+        gradient.addColorStop(1, 'rgba(56, 189, 248, 0)');
 
         signalChart = new Chart(ctx, {
             type: 'line',
@@ -162,14 +172,14 @@ const SentinelCharts = (() => {
                     {
                         label: 'RSSI',
                         data: [],
-                        borderColor: '#22c55e',
+                        borderColor: '#38bdf8',
                         backgroundColor: gradient,
                         borderWidth: 2,
                         fill: true,
                         tension: 0.3,
                         pointRadius: 0,
                         pointHoverRadius: 4,
-                        pointHoverBackgroundColor: '#22c55e',
+                        pointHoverBackgroundColor: '#38bdf8',
                     },
                 ],
             },
@@ -195,6 +205,7 @@ const SentinelCharts = (() => {
      * Create the packet loss bar chart.
      */
     function createPacketLossChart(canvasId) {
+        destroyChartByCanvasId(canvasId);
         const ctx = document.getElementById(canvasId).getContext('2d');
 
         lossChart = new Chart(ctx, {
@@ -300,15 +311,16 @@ const SentinelCharts = (() => {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return null;
 
+        destroyChartByCanvasId(canvasId);
         const ctx = canvas.getContext('2d');
 
         const dlGradient = ctx.createLinearGradient(0, 0, 0, 200);
-        dlGradient.addColorStop(0, 'rgba(34, 197, 94, 0.25)');
-        dlGradient.addColorStop(1, 'rgba(34, 197, 94, 0)');
+        dlGradient.addColorStop(0, 'rgba(56, 189, 248, 0.25)');
+        dlGradient.addColorStop(1, 'rgba(56, 189, 248, 0)');
 
         const ulGradient = ctx.createLinearGradient(0, 0, 0, 200);
-        ulGradient.addColorStop(0, 'rgba(56, 189, 248, 0.2)');
-        ulGradient.addColorStop(1, 'rgba(56, 189, 248, 0)');
+        ulGradient.addColorStop(0, 'rgba(125, 211, 252, 0.2)');
+        ulGradient.addColorStop(1, 'rgba(125, 211, 252, 0)');
 
         speedtestChart = new Chart(ctx, {
             type: 'line',
@@ -317,29 +329,29 @@ const SentinelCharts = (() => {
                     {
                         label: 'Download',
                         data: [],
-                        borderColor: '#22c55e',
+                        borderColor: '#38bdf8',
                         backgroundColor: dlGradient,
                         borderWidth: 2,
                         fill: true,
                         tension: 0.3,
                         pointRadius: 4,
                         pointHoverRadius: 6,
-                        pointBackgroundColor: '#22c55e',
-                        pointBorderColor: 'rgba(10, 14, 26, 0.8)',
+                        pointBackgroundColor: '#38bdf8',
+                        pointBorderColor: 'rgba(0, 0, 0, 0.8)',
                         pointBorderWidth: 2,
                     },
                     {
                         label: 'Upload',
                         data: [],
-                        borderColor: '#38bdf8',
+                        borderColor: '#7dd3fc',
                         backgroundColor: ulGradient,
                         borderWidth: 2,
                         fill: true,
                         tension: 0.3,
                         pointRadius: 4,
                         pointHoverRadius: 6,
-                        pointBackgroundColor: '#38bdf8',
-                        pointBorderColor: 'rgba(10, 14, 26, 0.8)',
+                        pointBackgroundColor: '#7dd3fc',
+                        pointBorderColor: 'rgba(0, 0, 0, 0.8)',
                         pointBorderWidth: 2,
                     },
                 ],
@@ -409,6 +421,8 @@ const SentinelCharts = (() => {
      * Initialize all charts.
      */
     function init() {
+        // Defensive cleanup: ensures repeated inits can never reuse a busy canvas.
+        destroy();
         createLatencyChart('chart-latency');
         createSignalChart('chart-signal');
         createPacketLossChart('chart-loss');
@@ -419,6 +433,10 @@ const SentinelCharts = (() => {
      * Destroy all charts (for cleanup).
      */
     function destroy() {
+        destroyChartByCanvasId('chart-latency');
+        destroyChartByCanvasId('chart-signal');
+        destroyChartByCanvasId('chart-loss');
+        destroyChartByCanvasId('chart-speedtest');
         if (latencyChart) { latencyChart.destroy(); latencyChart = null; }
         if (signalChart) { signalChart.destroy(); signalChart = null; }
         if (lossChart) { lossChart.destroy(); lossChart = null; }

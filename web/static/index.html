@@ -7,11 +7,11 @@
     <meta name="description"
         content="WiFi Sentinel — Local network health monitoring dashboard. Track latency, packet loss, and WiFi signal strength in real-time.">
     <title>WiFi Sentinel — Network Monitor</title>
+    <link rel="preconnect" href="https://api.fontshare.com">
+    <link href="https://api.fontshare.com/v2/css?f[]=general-sans@300,400,500,600,700&display=swap" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script
         src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -142,13 +142,17 @@
                     <span class="speedtest-label">Speed Test</span>
                     <div class="speedtest-results" id="speedtest-results">
                         <span class="speedtest-metric">
-                            <span class="speedtest-arrow down">↓</span>
+                            <span class="speedtest-arrow down">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                            </span>
                             <span id="speedtest-download">—</span>
                             <span class="speedtest-unit">Mbps</span>
                         </span>
                         <span class="speedtest-divider">·</span>
                         <span class="speedtest-metric">
-                            <span class="speedtest-arrow up">↑</span>
+                            <span class="speedtest-arrow up">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                            </span>
                             <span id="speedtest-upload">—</span>
                             <span class="speedtest-unit">Mbps</span>
                         </span>
